@@ -26,6 +26,17 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             padding: '20px',
             // Mobile Specific Overrides via Class/Style
         }} className="modal-overlay">
+            <style>{`
+                .modal-overlay {
+                    align-items: center;
+                }
+                @media (max-width: 600px) {
+                    .modal-overlay {
+                        align-items: flex-start !important; /* Top aligned */
+                        padding-top: 50px !important; /* Space from top */
+                    }
+                }
+            `}</style>
             {/* Backdrop */}
             <div
                 onClick={onClose}
@@ -106,22 +117,9 @@ const Modal = ({ isOpen, onClose, title, children }) => {
                 }
                 
                 /* Mobile Bottom Sheet Styles */
-                @media (max-width: 600px) {
-                    .modal-overlay {
-                        align-items: flex-end !important; /* Push to bottom */
-                        padding: 0 !important; /* Full width */
-                    }
-                    .modal-content {
-                        border-bottom-left-radius: 0 !important;
-                        border-bottom-right-radius: 0 !important;
-                        max-height: 90vh !important; /* Taller on mobile */
-                        animation: slideUpMobile 0.3s ease-out !important;
-                    }
-                }
-                @keyframes slideUpMobile {
-                    from { transform: translateY(100%); }
-                    to { transform: translateY(0); }
-                }
+                
+                /* Mobile Bottom Sheet Styles REMOVED in favor of Top Align */
+                
             `}</style>
         </div>
     );

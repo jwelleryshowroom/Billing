@@ -4,7 +4,7 @@ import { useTransactions } from '../context/useTransactions';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
 
-const TransactionForm = ({ initialType = 'sale', onSuccess }) => {
+const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus }) => {
     const { addTransaction, transactions } = useTransactions();
     const { role } = useAuth();
     const { theme } = useTheme();
@@ -246,6 +246,7 @@ const TransactionForm = ({ initialType = 'sale', onSuccess }) => {
                         step="0.01"
                         required
                         autoFocus={isPopup} // Auto focus if in modal
+                        onFocus={() => onInputFocus?.()}
                     />
                 </div>
 
@@ -258,6 +259,7 @@ const TransactionForm = ({ initialType = 'sale', onSuccess }) => {
                         placeholder={type === 'sale' ? "e.g. Morning Sales" : "e.g. Vegetables, Rent"}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
+                        onFocus={() => onInputFocus?.()}
                     />
                     {/* Smart Chips 🧠 */}
                     {suggestions.length > 0 && (
