@@ -11,7 +11,7 @@ export const ThemeProvider = ({ children }) => {
 
     const [dashboardMode, setDashboardMode] = useState(() => {
         const savedMode = localStorage.getItem('dashboardMode');
-        return savedMode ? savedMode : 'inline'; // 'inline' or 'popup'
+        return savedMode ? savedMode : 'popup'; // 'inline' or 'popup'
     });
 
     useEffect(() => {
