@@ -79,8 +79,18 @@ const MilestoneModal = () => {
                     textAlign: 'left'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                        <div style={{ backgroundColor: 'var(--color-success)', padding: '4px', borderRadius: '50%' }}>
-                            <Check size={12} color="white" />
+                        <div style={{
+                            backgroundColor: 'var(--color-success)',
+                            padding: '4px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '24px',
+                            height: '24px',
+                            flexShrink: 0
+                        }}>
+                            <Check size={14} color="white" strokeWidth={3} />
                         </div>
                         <span style={{ fontSize: '0.95rem', color: 'var(--color-text-main)' }}>
                             You hit this in <strong>{daysTaken} days</strong>! 🚀
