@@ -289,29 +289,16 @@ const Dashboard = () => {
                                 <div
                                     key={t.id}
                                     style={{
-                                        padding: '10px 16px', // Tighter padding requested
+                                        padding: '16px',
                                         borderBottom: index !== todaysTransactions.length - 1 ? '1px solid var(--color-border)' : 'none',
                                         display: 'flex',
                                         justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        minHeight: '60px' // Ensure fixed/consistent feel for rows
+                                        alignItems: 'center'
                                     }}
                                 >
-                                    <div style={{ flex: 1, minWidth: 0, marginRight: '16px' }}>
-                                        <div style={{
-                                            fontWeight: '500',
-                                            lineHeight: '1.3',
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'normal', // Force wrapping
-                                            wordBreak: 'break-word' // Break long words if needed
-                                        }}>
-                                            {t.description}
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                                    <div>
+                                        <div style={{ fontWeight: '500' }}>{t.description}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                                             {format(new Date(t.date), 'h:mm a')}
                                         </div>
                                     </div>
