@@ -6,6 +6,8 @@ import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useTheme } from './context/useTheme';
 import { InstallProvider } from './context/InstallContext';
+import { MilestoneProvider } from './context/MilestoneContext';
+import MilestoneModal from './components/MilestoneModal';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import { LayoutDashboard, FileBarChart } from 'lucide-react';
@@ -46,100 +48,102 @@ const AuthenticatedApp = () => {
 
   return (
     <TransactionProvider>
-      <Layout setCurrentView={setCurrentView}>
-        {/* Modern Pill Navigation */}
-        <div style={{
-          display: 'flex',
-          marginBottom: '20px', // Reduced from 32px
-          marginTop: '8px', // Reduced from 16px
-          backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.5)', // Adaptive background
-          padding: '4px',
-          borderRadius: '999px',
-          position: 'sticky',
-          top: '20px',
-          zIndex: 50,
-          backdropFilter: 'blur(12px)',
-          border: '1px solid var(--color-border)' // Add subtle border to container
-        }}>
-          <button
-            onClick={() => setCurrentView('dashboard')}
-            style={{
-              flex: 1,
-              padding: '12px 12px',
-              borderRadius: '999px',
-              backgroundColor: currentView === 'dashboard' ? 'var(--color-bg-surface-transparent)' : 'transparent',
-              color: currentView === 'dashboard' ? 'var(--color-text-main)' : 'var(--color-text-muted)',
-              fontSize: '1rem',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              border: '1px solid',
-              borderColor: currentView === 'dashboard' ? 'var(--color-border)' : 'transparent',
-              boxShadow: currentView === 'dashboard' ? getGlow() : 'none',
-              backdropFilter: currentView === 'dashboard' ? 'blur(12px)' : 'none',
-              cursor: 'pointer',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onMouseEnter={(e) => {
-              if (currentView !== 'dashboard') e.currentTarget.style.color = 'var(--color-text-main)';
-            }}
-            onMouseLeave={(e) => {
-              if (currentView !== 'dashboard') e.currentTarget.style.color = 'var(--color-text-muted)';
-            }}
-          >
-            <LayoutDashboard size={18} /> Dashboard
-          </button>
+      <MilestoneProvider>
+        <MilestoneModal />
+        <Layout setCurrentView={setCurrentView}>
+          {/* Modern Pill Navigation */}
+          <div style={{
+            display: 'flex',
+            marginBottom: '20px', // Reduced from 32px
+            marginTop: '8px', // Reduced from 16px
+            backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.5)', // Adaptive background
+            padding: '4px',
+            borderRadius: '999px',
+            position: 'sticky',
+            top: '20px',
+            zIndex: 50,
+            backdropFilter: 'blur(12px)',
+            border: '1px solid var(--color-border)' // Add subtle border to container
+          }}>
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              style={{
+                flex: 1,
+                padding: '12px 12px',
+                borderRadius: '999px',
+                backgroundColor: currentView === 'dashboard' ? 'var(--color-bg-surface-transparent)' : 'transparent',
+                color: currentView === 'dashboard' ? 'var(--color-text-main)' : 'var(--color-text-muted)',
+                fontSize: '1rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                border: '1px solid',
+                borderColor: currentView === 'dashboard' ? 'var(--color-border)' : 'transparent',
+                boxShadow: currentView === 'dashboard' ? getGlow() : 'none',
+                backdropFilter: currentView === 'dashboard' ? 'blur(12px)' : 'none',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseEnter={(e) => {
+                if (currentView !== 'dashboard') e.currentTarget.style.color = 'var(--color-text-main)';
+              }}
+              onMouseLeave={(e) => {
+                if (currentView !== 'dashboard') e.currentTarget.style.color = 'var(--color-text-muted)';
+              }}
+            >
+              <LayoutDashboard size={18} /> Dashboard
+            </button>
 
-          <button
-            onClick={() => setCurrentView('reports')}
-            style={{
-              flex: 1,
-              padding: '12px 12px',
-              borderRadius: '999px',
-              backgroundColor: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-bg-surface-transparent)' : 'transparent',
-              color: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-text-main)' : 'var(--color-text-muted)',
-              fontSize: '1rem',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              border: '1px solid',
-              borderColor: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-border)' : 'transparent',
-              boxShadow: (currentView === 'reports' || currentView === 'analytics') ? getGlow() : 'none',
-              backdropFilter: (currentView === 'reports' || currentView === 'analytics') ? 'blur(12px)' : 'none',
-              cursor: 'pointer',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onMouseEnter={(e) => {
-              if (currentView !== 'reports' && currentView !== 'analytics') e.currentTarget.style.color = 'var(--color-text-main)';
-            }}
-            onMouseLeave={(e) => {
-              if (currentView !== 'reports' && currentView !== 'analytics') e.currentTarget.style.color = 'var(--color-text-muted)';
-            }}
-          >
-            <FileBarChart size={18} /> Reports
-          </button>
-        </div>
-
-        {currentView === 'dashboard' && <Dashboard />}
-
-        <React.Suspense fallback={<LoadingFallback />}>
-          {/* Keep Reports mounted if view is reports OR analytics (so analytics overlays it) */}
-          {(currentView === 'reports' || currentView === 'analytics') && <Reports setCurrentView={setCurrentView} />}
-
-          {/* Analytics Overlay */}
-          <div className={`analytics-overlay ${currentView === 'analytics' ? 'active' : ''}`}>
-            {currentView === 'analytics' && <Analytics setCurrentView={setCurrentView} />}
+            <button
+              onClick={() => setCurrentView('reports')}
+              style={{
+                flex: 1,
+                padding: '12px 12px',
+                borderRadius: '999px',
+                backgroundColor: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-bg-surface-transparent)' : 'transparent',
+                color: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-text-main)' : 'var(--color-text-muted)',
+                fontSize: '1rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                border: '1px solid',
+                borderColor: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-border)' : 'transparent',
+                boxShadow: (currentView === 'reports' || currentView === 'analytics') ? getGlow() : 'none',
+                backdropFilter: (currentView === 'reports' || currentView === 'analytics') ? 'blur(12px)' : 'none',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseEnter={(e) => {
+                if (currentView !== 'reports' && currentView !== 'analytics') e.currentTarget.style.color = 'var(--color-text-main)';
+              }}
+              onMouseLeave={(e) => {
+                if (currentView !== 'reports' && currentView !== 'analytics') e.currentTarget.style.color = 'var(--color-text-muted)';
+              }}
+            >
+              <FileBarChart size={18} /> Reports
+            </button>
           </div>
 
-          {currentView === 'data' && <DataManagement onClose={() => setCurrentView('dashboard')} />}
-          {currentView === 'settings' && <Settings onClose={() => setCurrentView('dashboard')} />}
-        </React.Suspense>
+          {currentView === 'dashboard' && <Dashboard />}
 
-        <style>{`
+          <React.Suspense fallback={<LoadingFallback />}>
+            {/* Keep Reports mounted if view is reports OR analytics (so analytics overlays it) */}
+            {(currentView === 'reports' || currentView === 'analytics') && <Reports setCurrentView={setCurrentView} />}
+
+            {/* Analytics Overlay */}
+            <div className={`analytics-overlay ${currentView === 'analytics' ? 'active' : ''}`}>
+              {currentView === 'analytics' && <Analytics setCurrentView={setCurrentView} />}
+            </div>
+
+            {currentView === 'data' && <DataManagement onClose={() => setCurrentView('dashboard')} />}
+            {currentView === 'settings' && <Settings onClose={() => setCurrentView('dashboard')} />}
+          </React.Suspense>
+
+          <style>{`
           .analytics-overlay {
             position: fixed;
             inset: 0;
@@ -165,7 +169,8 @@ const AuthenticatedApp = () => {
           }
         `}</style>
 
-      </Layout>
+        </Layout>
+      </MilestoneProvider>
     </TransactionProvider>
   );
 };
