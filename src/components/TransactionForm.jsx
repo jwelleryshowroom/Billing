@@ -233,6 +233,8 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus }) => {
                     <label className="input-label" style={isPopup ? { color: 'var(--color-text-main)', marginBottom: '4px', fontSize: '0.85rem' } : { marginBottom: '4px', fontSize: '0.85rem' }}>Amount (₹)</label>
                     <input
                         type="number"
+                        name="math_amount" // Obscure name to prevent browser heuristics
+                        id="amount_field"
                         className={`input-field ${isPopup ? 'glass-input' : ''}`}
                         style={isPopup ? glassInputStyle : {}}
                         placeholder="0"
@@ -248,6 +250,10 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus }) => {
                         onFocus={() => onInputFocus?.()}
                         inputMode="decimal" // Better mobile keyboard
                         autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck="false"
+                        data-form-type="other"
                     />
                 </div>
 
@@ -255,13 +261,17 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus }) => {
                     <label className="input-label" style={isPopup ? { color: 'var(--color-text-main)' } : { marginBottom: '4px', fontSize: '0.85rem' }}>Description (Optional)</label>
                     <input
                         type="text"
+                        name="custom_desc" // Obscure name
+                        id="desc_field"
                         className={`input-field ${isPopup ? 'glass-input' : ''}`}
                         style={isPopup ? glassInputStyle : {}}
                         placeholder={type === 'sale' ? "e.g. Morning Sales" : "e.g. Vegetables, Rent"}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         onFocus={() => onInputFocus?.()}
-                        autoComplete="off"
+                        autoComplete="off" // Stop "Data" autofill (cards, emails)
+                        autoCorrect="on"   // Keep "Text" correction
+                        spellCheck="true"  // Keep spellcheck
                     />
                     {/* Smart Chips 🧠 */}
                     {suggestions.length > 0 && (
