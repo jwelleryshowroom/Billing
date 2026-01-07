@@ -287,9 +287,9 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
                             gap: '8px',
                             marginTop: '8px',
                             overflowX: 'auto',
-                            paddingBottom: '4px',
-                            msOverflowStyle: 'none',  // IE and Edge
-                            scrollbarWidth: 'none'  // Firefox
+                            padding: '4px', // Add padding to avoid shadow clipping
+                            msOverflowStyle: 'none',
+                            scrollbarWidth: 'none'
                         }}>
                             <style>{`
                                 .chip-scroll-container::-webkit-scrollbar {
@@ -303,24 +303,24 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
                                     onClick={() => setDescription(s)}
                                     style={{
                                         whiteSpace: 'nowrap',
-                                        padding: '6px 12px',
-                                        borderRadius: '16px',
+                                        padding: '8px 16px', // Slightly larger hit area
+                                        borderRadius: '20px',
                                         border: '1px solid var(--color-border)',
                                         backgroundColor: isPopup ? 'rgba(255,255,255,0.1)' : 'var(--color-bg-surface)',
                                         color: 'var(--color-text-secondary)',
-                                        fontSize: '0.8rem',
+                                        fontSize: '0.85rem',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        backdropFilter: isPopup ? 'blur(4px)' : 'none'
+                                        transition: 'background-color 0.2s, color 0.2s', // Remove transform transition
+                                        backdropFilter: isPopup ? 'blur(4px)' : 'none',
+                                        flexShrink: 0 // Prevent squashing
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.target.style.transform = 'scale(1.05)';
+                                        // Removed scale to prevent clipping/trimming issues
                                         e.target.style.backgroundColor = type === 'sale' ? 'var(--color-success)' : 'var(--color-danger)';
                                         e.target.style.color = 'white';
                                         e.target.style.borderColor = type === 'sale' ? 'var(--color-success)' : 'var(--color-danger)';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.target.style.transform = 'scale(1)';
                                         e.target.style.backgroundColor = isPopup ? 'rgba(255,255,255,0.1)' : 'var(--color-bg-surface)';
                                         e.target.style.color = 'var(--color-text-secondary)';
                                         e.target.style.borderColor = 'var(--color-border)';
