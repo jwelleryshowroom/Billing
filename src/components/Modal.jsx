@@ -33,7 +33,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
                 @media (max-width: 600px) {
                     .modal-overlay {
                         align-items: flex-start !important; /* Top aligned */
-                        padding-top: 50px !important; /* Space from top */
+                        padding-top: 10px !important; /* Space from top */
                     }
                 }
             `}</style>
@@ -61,12 +61,12 @@ const Modal = ({ isOpen, onClose, title, children }) => {
                 animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                 display: 'flex',
                 flexDirection: 'column',
-                maxHeight: '85vh', // Slightly reduced to allow margin
+                maxHeight: '95vh', // Increased max-height to fit more content
                 backdropFilter: 'blur(12px)'
             }}>
                 {/* Header */}
                 <div style={{
-                    padding: '16px 24px', // Compact Header
+                    padding: '12px 20px', // Compact Header
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -97,7 +97,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 
                 {/* Body - SCROLLABLE */}
                 <div style={{
-                    padding: '20px 24px',
+                    padding: '10px 20px',
                     overflowY: 'auto', // ENABLE SCROLLING
                     overscrollBehavior: 'contain',
                     flex: 1 // Take remaining height
