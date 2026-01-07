@@ -154,6 +154,11 @@ const AuthenticatedApp = () => {
             justify-content: center;
             padding: 20px;
           }
+          @media (max-width: 600px) {
+            .analytics-overlay {
+              padding: 5px; /* Maximize width on mobile */
+            }
+          }
           .analytics-overlay.active {
             opacity: 1;
             visibility: visible;

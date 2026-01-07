@@ -247,12 +247,15 @@ const Analytics = ({ setCurrentView }) => {
             </div>
 
             {/* Content Grid */}
-            <div style={{
+            <div className="analytics-container" style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: '0 24px 24px 24px',
+                // padding set via CSS for responsiveness
             }}>
                 <style>{`
+                    .analytics-container {
+                        padding: 0 24px 24px 24px;
+                    }
                     .analytics-grid {
                         display: grid;
                         grid-template-columns: 1fr;
@@ -261,6 +264,14 @@ const Analytics = ({ setCurrentView }) => {
                     @media (min-width: 900px) {
                         .analytics-grid {
                             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                        }
+                    }
+                    @media (max-width: 600px) {
+                        .analytics-container {
+                            padding: 0 12px 12px 12px !important; /* Less padding on mobile */
+                        }
+                        .analytics-grid {
+                            gap: 16px; /* Tighten gap on mobile */
                         }
                     }
                 `}</style>
@@ -292,7 +303,13 @@ const Analytics = ({ setCurrentView }) => {
                                         </linearGradient>
                                     </defs>
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: themeStyles.textSecondary }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: themeStyles.textSecondary }} tickFormatter={formatCurrency} />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 11, fill: themeStyles.textSecondary }}
+                                        tickFormatter={formatCompact}
+                                        width={40} /* Fixed shorter width for compact numbers */
+                                    />
                                     <Tooltip
                                         formatter={(value) => formatCurrency(value)}
                                         contentStyle={tooltipStyle}
