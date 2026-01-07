@@ -289,16 +289,26 @@ const Dashboard = () => {
                                 <div
                                     key={t.id}
                                     style={{
-                                        padding: '16px',
+                                        padding: '12px 16px', // Compact padding
                                         borderBottom: index !== todaysTransactions.length - 1 ? '1px solid var(--color-border)' : 'none',
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center'
                                     }}
                                 >
-                                    <div>
-                                        <div style={{ fontWeight: '500' }}>{t.description}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                    <div style={{ flex: 1, minWidth: 0, marginRight: '16px' }}>
+                                        <div style={{
+                                            fontWeight: '500',
+                                            lineHeight: '1.3',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
+                                        }}>
+                                            {t.description}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
                                             {format(new Date(t.date), 'h:mm a')}
                                         </div>
                                     </div>
