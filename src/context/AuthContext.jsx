@@ -23,10 +23,23 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
+        // 🚀 OPTIMIZATION: Check LocalStorage for cached role/user to load UI immediately
+        const cachedRole = localStorage.getItem('cached_role');
+        const cachedEmail = localStorage.getItem('cached_email');
+        if (cachedRole && cachedEmail) {
+            setBackendRole(cachedRole);
+            setLoading(false); // Unblock UI immediately with cached data
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
             if (currentUser) {
-                setIsAllowed(null); // Reset to null to trigger loading state while checking
+                // If we don't have cached data, we might be loading (or if user changed)
+                if (currentUser.email !== cachedEmail) {
+                    setLoading(true);
+                }
+
+                setIsAllowed(null);
                 try {
                     // Check if user exists in 'authorized_users' collection
                     const docRef = doc(db, "authorized_users", currentUser.email);
@@ -34,12 +47,19 @@ export const AuthProvider = ({ children }) => {
 
                     if (docSnap.exists()) {
                         const data = docSnap.data();
+                        const realRole = data.role || 'guest';
+
                         setIsAllowed(true);
-                        setBackendRole(data.role || 'guest');
+                        setBackendRole(realRole);
+
+                        // Cache for next boot
+                        localStorage.setItem('cached_role', realRole);
+                        localStorage.setItem('cached_email', currentUser.email);
                     } else {
                         console.warn("User email not found in authorized_users collection.");
                         setIsAllowed(false);
                         setBackendRole('guest');
+                        localStorage.removeItem('cached_role'); // Clear invalid cache
                     }
                 } catch (error) {
                     console.error("Error checking authorization:", error);
@@ -47,6 +67,9 @@ export const AuthProvider = ({ children }) => {
                 }
             } else {
                 setIsAllowed(false);
+                // Clear cache on logout
+                localStorage.removeItem('cached_role');
+                localStorage.removeItem('cached_email');
             }
             setLoading(false);
         });
