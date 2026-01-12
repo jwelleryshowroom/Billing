@@ -12,6 +12,12 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
+      server: {
+        headers: {
+          'Cross-Origin-Opener-Policy': 'same-origin',
+          'Cross-Origin-Embedder-Policy': 'require-corp',
+        },
+      },
       manifest: {
         name: 'The Classic Confection',
         short_name: 'TCC',

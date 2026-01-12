@@ -2,12 +2,14 @@ import React from 'react';
 import { useTheme } from '../context/useTheme';
 import { useAuth } from '../context/useAuth';
 import { useInstall } from '../context/useInstall';
-import { Settings as SettingsIcon, Layout, Smartphone, ArrowLeft } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
+import { Settings as SettingsIcon, Layout, Smartphone, ArrowLeft, MousePointer2, Eye, Smile, Type } from 'lucide-react';
 
 const Settings = ({ onClose }) => {
     const { dashboardMode, setDashboardMode } = useTheme();
     const { role: _role } = useAuth();
     const { deferredPrompt, promptInstall, isIOS, isStandalone } = useInstall();
+    const { menuBarMode, setMenuBarMode, iconStyle, setIconStyle, showMenuLabels, setShowMenuLabels } = useSettings();
 
     return (
         <div style={{ padding: '0 4px', height: '100%', overflowY: 'auto' }}>
@@ -205,43 +207,181 @@ const Settings = ({ onClose }) => {
                     </p>
                 </div>
 
+                {/* --- Menu Bar Settings --- */}
+                <div style={{ marginBottom: '24px', borderTop: '1px solid var(--color-border)', paddingTop: '24px' }}>
+                    <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, marginBottom: '16px', color: 'var(--color-text-main)' }}>
+                        Menu Bar Behavior
+                    </label>
 
-
-                {/* Manual Install Button (if not installed) */}
-                {(!isStandalone) && (
-                    <div className="card" style={{ marginTop: '20px', padding: '16px', backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div>
-                                <h3 style={{ fontSize: '1rem', margin: '0 0 4px', color: 'var(--color-text-main)' }}>Install App</h3>
-                                <p style={{ fontSize: '0.8rem', margin: 0, color: 'var(--color-text-muted)' }}>
-                                    {isIOS ? 'Add to Home Screen for the best experience.' : 'Install for quick access and offline mode.'}
-                                </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        {/* Sticky Mode */}
+                        <div
+                            onClick={() => setMenuBarMode('sticky')}
+                            style={{
+                                cursor: 'pointer',
+                                border: `2px solid ${menuBarMode === 'sticky' ? 'var(--color-primary)' : 'transparent'}`,
+                                borderRadius: '16px',
+                                padding: '12px',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '10px', textAlign: 'center', color: menuBarMode === 'sticky' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                                <Eye size={16} style={{ display: 'inline', marginRight: '5px' }} /> Always Visible
                             </div>
-                            <button
-                                onClick={() => isIOS ? alert("To install on iOS: Tap the Share button ⬆️ and select 'Add to Home Screen'.") : promptInstall()}
-                                disabled={!deferredPrompt && !isIOS}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: (!deferredPrompt && !isIOS) ? 'var(--color-text-muted)' : 'var(--color-primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem',
-                                    cursor: (!deferredPrompt && !isIOS) ? 'not-allowed' : 'pointer',
-                                    opacity: (!deferredPrompt && !isIOS) ? 0.5 : 1
-                                }}
-                            >
-                                {isIOS ? 'How to?' : 'Install'}
-                            </button>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                                Stays fixed at the bottom. Classic & simple.
+                            </div>
+                        </div>
+
+                        {/* Disappearing Mode */}
+                        <div
+                            onClick={() => setMenuBarMode('disappearing')}
+                            style={{
+                                cursor: 'pointer',
+                                border: `2px solid ${menuBarMode === 'disappearing' ? 'var(--color-primary)' : 'transparent'}`,
+                                borderRadius: '16px',
+                                padding: '12px',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '10px', textAlign: 'center', color: menuBarMode === 'disappearing' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                                <MousePointer2 size={16} style={{ display: 'inline', marginRight: '5px' }} /> Auto-Hide
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                                Vanishes when unused. Hover to reveal. Mac style! 🖥️
+                            </div>
                         </div>
                     </div>
-                )}
-
-                <div style={{ padding: '24px', textAlign: 'center', opacity: 0.3 }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>TCC App v1.1.1</div>
-                    <div style={{ fontSize: '0.7rem' }}>© 2026 The Classic Confection</div>
                 </div>
+            </div>
+
+            {/* --- Icon Style Settings --- */}
+            <div style={{ marginBottom: '24px', borderTop: '1px solid var(--color-border)', paddingTop: '24px' }}>
+                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, marginBottom: '16px', color: 'var(--color-text-main)' }}>
+                    Icon Style
+                </label>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* Monochromatic */}
+                    <div
+                        onClick={() => setIconStyle('mono')}
+                        style={{
+                            cursor: 'pointer',
+                            border: `2px solid ${iconStyle === 'mono' ? 'var(--color-primary)' : 'transparent'}`,
+                            borderRadius: '16px',
+                            padding: '12px',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '10px', textAlign: 'center', color: iconStyle === 'mono' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                            <SettingsIcon size={16} style={{ display: 'inline', marginRight: '5px' }} /> Monochromatic
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                            Clean, simple, and matches the theme.
+                        </div>
+                    </div>
+
+                    {/* Modern Emoji */}
+                    <div
+                        onClick={() => setIconStyle('emoji')}
+                        style={{
+                            cursor: 'pointer',
+                            border: `2px solid ${iconStyle === 'emoji' ? 'var(--color-primary)' : 'transparent'}`,
+                            borderRadius: '16px',
+                            padding: '12px',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '10px', textAlign: 'center', color: iconStyle === 'emoji' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                            <span style={{ marginRight: '5px' }}>🤩</span> Modern Emoji
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                            Colorful and expressive icons.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* --- Menu Labels Settings --- */}
+            <div style={{ marginBottom: '24px', borderTop: '1px solid var(--color-border)', paddingTop: '24px', paddingBottom: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
+                            Show Menu Labels
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                            Hide text for a cleaner, minimal look.
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => setShowMenuLabels(!showMenuLabels)}
+                        style={{
+                            width: '50px',
+                            height: '28px',
+                            borderRadius: '100px',
+                            backgroundColor: showMenuLabels ? 'var(--color-primary)' : 'var(--color-bg-secondary)',
+                            border: 'none',
+                            position: 'relative',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s'
+                        }}
+                    >
+                        <div style={{
+                            width: '22px',
+                            height: '22px',
+                            borderRadius: '50%',
+                            backgroundColor: 'white',
+                            position: 'absolute',
+                            top: '3px',
+                            left: showMenuLabels ? '25px' : '3px',
+                            transition: 'all 0.3s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }} />
+                    </button>
+                </div>
+            </div>
+
+
+
+            {/* Manual Install Button (if not installed) */}
+            {(!isStandalone) && (
+                <div className="card" style={{ marginTop: '20px', padding: '16px', backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1rem', margin: '0 0 4px', color: 'var(--color-text-main)' }}>Install App</h3>
+                            <p style={{ fontSize: '0.8rem', margin: 0, color: 'var(--color-text-muted)' }}>
+                                {isIOS ? 'Add to Home Screen for the best experience.' : 'Install for quick access and offline mode.'}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => isIOS ? alert("To install on iOS: Tap the Share button ⬆️ and select 'Add to Home Screen'.") : promptInstall()}
+                            disabled={!deferredPrompt && !isIOS}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: (!deferredPrompt && !isIOS) ? 'var(--color-text-muted)' : 'var(--color-primary)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontWeight: 600,
+                                fontSize: '0.9rem',
+                                cursor: (!deferredPrompt && !isIOS) ? 'not-allowed' : 'pointer',
+                                opacity: (!deferredPrompt && !isIOS) ? 0.5 : 1
+                            }}
+                        >
+                            {isIOS ? 'How to?' : 'Install'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div style={{ padding: '24px', textAlign: 'center', opacity: 0.3 }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>TCC App v1.2.0</div>
+                <div style={{ fontSize: '0.7rem' }}>© 2026 The Classic Confection</div>
             </div>
         </div>
     );

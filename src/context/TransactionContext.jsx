@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, writeBatch, getDocs, where } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, query, orderBy, writeBatch, getDocs, where } from 'firebase/firestore';
 import { useToast } from './useToast';
 import { startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { TransactionContext } from './TransactionContextDef';
@@ -67,6 +67,19 @@ export const TransactionProvider = ({ children }) => {
         }
     };
 
+    const updateTransaction = async (id, updates) => {
+        try {
+            // Remove any undefined fields to prevent Firestore errors
+            const cleanUpdates = JSON.parse(JSON.stringify(updates));
+
+            await updateDoc(doc(db, 'transactions', id), cleanUpdates);
+            showToast("Order updated.", "success");
+        } catch (error) {
+            console.error("Error updating transaction:", error);
+            showToast("Failed to update order.", "error");
+        }
+    };
+
     const deleteTransaction = async (id) => {
         // Find transaction data before deleting for Undo capability
         const transactionToDelete = transactions.find(t => t.id === id);
@@ -126,6 +139,7 @@ export const TransactionProvider = ({ children }) => {
         currentRange,
         setViewDateRange,
         addTransaction,
+        updateTransaction,
         deleteTransaction,
         deleteTransactionsByDateRange,
         clearAllTransactions

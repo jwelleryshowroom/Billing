@@ -33,7 +33,7 @@ service cloud.firestore {
     
     function isValidTransaction() {
       return request.resource.data.amount is number
-             && request.resource.data.type in ['sale', 'expense']
+             && request.resource.data.type in ['sale', 'expense', 'order']
              && request.resource.data.description is string;
     }
 
@@ -52,8 +52,11 @@ service cloud.firestore {
 
     // 2. Transactions (Sales & Expenses)
     match /transactions/{transactionId} {
-      // READ, CREATE, DELETE: Allowed for ALL Staff (so they can sell & fix mistakes)
-      allow read, create, delete: if isStaff();
+      // 🟢 PUBLIC ACCESS: Anyone can view a single invoice (for sharing)
+      allow get: if true;
+
+      // 🔒 STAFF ONLY: List (Search), Create, Delete
+      allow list, create, delete: if isStaff();
       
       // Update check still validates data
       allow update: if isStaff() && isValidTransaction();

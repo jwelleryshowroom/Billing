@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useInstall } from '../context/useInstall';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, zIndex = 10000 }) => {
     const { isStandalone } = useInstall();
     useEffect(() => {
         if (isOpen) {
@@ -21,7 +21,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
         <div style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 1000,
+            zIndex: zIndex,
             display: 'flex',
             alignItems: 'center', // Default center
             justifyContent: 'center',

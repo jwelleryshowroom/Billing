@@ -49,6 +49,7 @@
   --color-bg-surface-transparent: rgba(255, 255, 255, 0.85);
   --color-bg-secondary: #f4f4f5;
   /* Light gray for inactive buttons */
+  --color-scheme: light;
 }
 
 [data-theme="dark"] {
@@ -59,6 +60,7 @@
   --color-text-main: #E0E0E0;
   --color-text-muted: #A0A0A0;
   --color-border: #333333;
+  --color-scheme: dark;
 
   --color-bg-input: #2C2C2C;
   --color-bg-glass-input: rgba(30, 30, 46, 0.4);

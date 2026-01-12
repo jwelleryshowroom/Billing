@@ -45,7 +45,7 @@ const InstallPrompt = () => {
     return (
         <div style={{
             position: 'fixed',
-            bottom: '24px',
+            top: '24px', // Moved to Top to avoid Bottom Nav overlap
             left: '50%',
             transform: 'translateX(-50%)',
             width: 'calc(100% - 32px)',
@@ -62,12 +62,12 @@ const InstallPrompt = () => {
             alignItems: 'center',
             gap: '12px',
             border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(62, 39, 35, 0.1)',
-            animation: 'slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1)'
+            animation: 'slideDown 0.6s cubic-bezier(0.22, 1, 0.36, 1)'
         }}>
             <style>
                 {`
-                    @keyframes slideUp {
-                        from { transform: translate(-50%, 100px); opacity: 0; }
+                    @keyframes slideDown {
+                        from { transform: translate(-50%, -100px); opacity: 0; }
                         to { transform: translate(-50%, 0); opacity: 1; }
                     }
                 `}

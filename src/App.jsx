@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import './App.css';
 import { TransactionProvider } from './context/TransactionContext';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/useAuth';
@@ -7,178 +9,42 @@ import { ThemeProvider } from './context/ThemeContext';
 import { useTheme } from './context/useTheme';
 import { InstallProvider } from './context/InstallContext';
 import { MilestoneProvider } from './context/MilestoneContext';
+import { InventoryProvider } from './context/InventoryContext';
+import { SettingsProvider } from './context/SettingsContext';
 import MilestoneModal from './components/MilestoneModal';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import { LayoutDashboard, FileBarChart } from 'lucide-react';
-
-// Lazy Load Heavy Components
-const Reports = React.lazy(() => import('./components/Reports'));
-const Analytics = React.lazy(() => import('./components/Analytics'));
-const DataManagement = React.lazy(() => import('./components/DataManagement'));
-const Settings = React.lazy(() => import('./components/Settings'));
-
-// Simple Suspense Fallback
-const LoadingFallback = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '300px' }}>
-    <div className="spinner"></div>
-  </div>
-);
-import PendingApproval from './components/PendingApproval';
+import Home from './components/Home';
 import Login from './components/Login';
 import InstallPrompt from './components/InstallPrompt';
+import PendingApproval from './components/PendingApproval';
+import BottomNav from './components/BottomNav';
+import Billing from './components/Billing';
+import Orders from './components/Orders';
+import Inventory from './components/Inventory';
+import PublicInvoice from './components/PublicInvoice';
 
-const AuthenticatedApp = () => {
-  const { theme } = useTheme();
+// Lazy Load Heavy Components (Removing from here as they are now in Home.jsx or not needed globally)
+// We keep Routes clean
 
-  // 💾 PERSISTENCE: Check local storage for last visited view
-  const [currentView, setCurrentView] = useState(() => {
-    return localStorage.getItem('last_view') || 'dashboard';
-  });
-
-  // 💾 PERSISTENCE: Save view to local storage on change
-  React.useEffect(() => {
-    localStorage.setItem('last_view', currentView);
-  }, [currentView]);
-
-  // Subtle glow for dark mode, Warm glow for light mode
-  const getGlow = () => theme === 'dark'
-    ? '0 0 15px -4px rgba(255, 255, 255, 0.1)'
-    : '0 0 20px -5px var(--color-primary-light), 0 4px 10px rgba(0,0,0,0.1)';
+const MainLayout = () => {
+  // We don't need useTheme here anymore for the glow if it's handled in Home/Layout
 
   return (
-    <TransactionProvider>
-      <MilestoneProvider>
-        <MilestoneModal />
-        <Layout setCurrentView={setCurrentView}>
-          {/* Modern Pill Navigation */}
-          <div style={{
-            display: 'flex',
-            marginBottom: '20px', // Reduced from 32px
-            marginTop: '8px', // Reduced from 16px
-            backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.5)', // Adaptive background
-            padding: '4px',
-            borderRadius: '999px',
-            position: 'sticky',
-            top: '20px',
-            zIndex: 50,
-            backdropFilter: 'blur(12px)',
-            border: '1px solid var(--color-border)' // Add subtle border to container
-          }}>
-            <button
-              onClick={() => setCurrentView('dashboard')}
-              style={{
-                flex: 1,
-                padding: '12px 12px',
-                borderRadius: '999px',
-                backgroundColor: currentView === 'dashboard' ? 'var(--color-bg-surface-transparent)' : 'transparent',
-                color: currentView === 'dashboard' ? 'var(--color-text-main)' : 'var(--color-text-muted)',
-                fontSize: '1rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                border: '1px solid',
-                borderColor: currentView === 'dashboard' ? 'var(--color-border)' : 'transparent',
-                boxShadow: currentView === 'dashboard' ? getGlow() : 'none',
-                backdropFilter: currentView === 'dashboard' ? 'blur(12px)' : 'none',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              }}
-              onMouseEnter={(e) => {
-                if (currentView !== 'dashboard') e.currentTarget.style.color = 'var(--color-text-main)';
-              }}
-              onMouseLeave={(e) => {
-                if (currentView !== 'dashboard') e.currentTarget.style.color = 'var(--color-text-muted)';
-              }}
-            >
-              <LayoutDashboard size={18} /> Dashboard
-            </button>
-
-            <button
-              onClick={() => setCurrentView('reports')}
-              style={{
-                flex: 1,
-                padding: '12px 12px',
-                borderRadius: '999px',
-                backgroundColor: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-bg-surface-transparent)' : 'transparent',
-                color: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-text-main)' : 'var(--color-text-muted)',
-                fontSize: '1rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                border: '1px solid',
-                borderColor: (currentView === 'reports' || currentView === 'analytics') ? 'var(--color-border)' : 'transparent',
-                boxShadow: (currentView === 'reports' || currentView === 'analytics') ? getGlow() : 'none',
-                backdropFilter: (currentView === 'reports' || currentView === 'analytics') ? 'blur(12px)' : 'none',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              }}
-              onMouseEnter={(e) => {
-                if (currentView !== 'reports' && currentView !== 'analytics') e.currentTarget.style.color = 'var(--color-text-main)';
-              }}
-              onMouseLeave={(e) => {
-                if (currentView !== 'reports' && currentView !== 'analytics') e.currentTarget.style.color = 'var(--color-text-muted)';
-              }}
-            >
-              <FileBarChart size={18} /> Reports
-            </button>
-          </div>
-
-          {currentView === 'dashboard' && <Dashboard />}
-
-          <React.Suspense fallback={<LoadingFallback />}>
-            {/* Keep Reports mounted if view is reports OR analytics (so analytics overlays it) */}
-            {(currentView === 'reports' || currentView === 'analytics') && <Reports setCurrentView={setCurrentView} />}
-
-            {/* Analytics Overlay */}
-            <div className={`analytics-overlay ${currentView === 'analytics' ? 'active' : ''}`}>
-              {currentView === 'analytics' && <Analytics setCurrentView={setCurrentView} />}
-            </div>
-
-            {currentView === 'data' && <DataManagement onClose={() => setCurrentView('dashboard')} />}
-            {currentView === 'settings' && <Settings onClose={() => setCurrentView('dashboard')} />}
-          </React.Suspense>
-
-          <style>{`
-          .analytics-overlay {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-          }
-          @media (max-width: 600px) {
-            .analytics-overlay {
-              padding: 5px; /* Maximize width on mobile */
-            }
-          }
-          .analytics-overlay.active {
-            opacity: 1;
-            visibility: visible;
-          }
-        `}</style>
-
-        </Layout>
-      </MilestoneProvider>
-    </TransactionProvider>
+    <div style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/billing" element={<Billing />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/inventory" element={<Inventory />} />
+      </Routes>
+      <BottomNav />
+    </div>
   );
 };
 
-const AppContent = () => {
+const ProtectedApp = () => {
   const { user, isAllowed, loading } = useAuth();
 
-  // Check for loading OR if authentication check is still pending (isAllowed is null)
   if (loading || isAllowed === null) return (
     <div className="loading-container">
       <div className="spinner"></div>
@@ -190,27 +56,48 @@ const AppContent = () => {
 
   if (isAllowed === false) return <PendingApproval />;
 
-  if (isAllowed === false) return <PendingApproval />;
-
   return (
     <>
       <InstallPrompt />
-      <AuthenticatedApp />
+      <MainLayout />
+      <MilestoneModal />
     </>
+  );
+};
+
+const AppContent = () => {
+  return (
+    <Routes>
+      {/* Public Route for Smart Invoice Link - OPEN TO EVERYONE */}
+      <Route path="/view/:orderId" element={<PublicInvoice />} />
+
+      {/* Protected Routes - REQUIRE LOGIN */}
+      <Route path="/*" element={<ProtectedApp />} />
+    </Routes>
   );
 };
 
 function App() {
   return (
-    <AuthProvider>
-      <InstallProvider>
-        <ToastProvider>
-          <ThemeProvider>
-            <AppContent />
-          </ThemeProvider>
-        </ToastProvider>
-      </InstallProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <InstallProvider>
+          <ToastProvider>
+            <ThemeProvider>
+              <TransactionProvider>
+                <MilestoneProvider>
+                  <InventoryProvider>
+                    <SettingsProvider>
+                      <AppContent />
+                    </SettingsProvider>
+                  </InventoryProvider>
+                </MilestoneProvider>
+              </TransactionProvider>
+            </ThemeProvider>
+          </ToastProvider>
+        </InstallProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
