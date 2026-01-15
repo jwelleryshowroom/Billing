@@ -500,37 +500,63 @@ const Reports = ({ setCurrentView }) => {
             </div>
 
             {/* View Type Toggle (Transactions / Items) */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', marginBottom: '0' }}>
-                <button
-                    onClick={() => { triggerHaptic('light'); setViewType('transactions'); }}
-                    style={{
-                        flex: 1,
-                        padding: '12px',
-                        background: viewType === 'transactions' ? 'var(--color-bg-surface)' : 'transparent',
-                        borderBottom: viewType === 'transactions' ? '2px solid var(--color-primary)' : 'none',
-                        color: viewType === 'transactions' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer'
-                    }}
-                >
-                    Transactions
-                </button>
-                <button
-                    onClick={() => { triggerHaptic('light'); setViewType('items'); }}
-                    style={{
-                        flex: 1,
-                        padding: '12px',
-                        background: viewType === 'items' ? 'var(--color-bg-surface)' : 'transparent',
-                        borderBottom: viewType === 'items' ? '2px solid var(--color-primary)' : 'none',
-                        color: viewType === 'items' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer'
-                    }}
-                >
-                    Item Sales
-                </button>
+            <div style={{ padding: '0 20px', marginBottom: '16px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{
+                    display: 'flex',
+                    background: 'var(--color-bg-surface-transparent)',
+                    padding: '4px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--color-border)',
+                    width: '100%',
+                    maxWidth: '500px',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)'
+                }}>
+                    <button
+                        onClick={() => { triggerHaptic('light'); setViewType('transactions'); }}
+                        style={{
+                            flex: 1,
+                            padding: '10px',
+                            borderRadius: '8px',
+                            background: viewType === 'transactions' ? 'var(--color-primary)' : 'transparent',
+                            color: viewType === 'transactions' ? 'white' : 'var(--color-text-muted)',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            boxShadow: viewType === 'transactions' ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
+                        }}
+                    >
+                        Transactions
+                    </button>
+                    <button
+                        onClick={() => { triggerHaptic('light'); setViewType('items'); }}
+                        style={{
+                            flex: 1,
+                            padding: '10px',
+                            borderRadius: '8px',
+                            background: viewType === 'items' ? 'var(--color-primary)' : 'transparent',
+                            color: viewType === 'items' ? 'white' : 'var(--color-text-muted)',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            boxShadow: viewType === 'items' ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
+                        }}
+                    >
+                        Item Sales
+                    </button>
+                </div>
             </div>
 
             {/* Table Section (Flex 1) */}
@@ -553,7 +579,7 @@ const Reports = ({ setCurrentView }) => {
                                     gridTemplateColumns: '100px 1fr 125px',
                                     maxWidth: '600px',
                                     margin: '0 auto',
-                                    padding: '16px 0'
+                                    padding: '24px 0'
                                 }}>
                                     {[
                                         {

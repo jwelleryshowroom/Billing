@@ -208,6 +208,8 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                         <span>{transaction.customer?.phone || transaction.customerPhone || 'N/A'}</span>
                     </div>
 
+
+
                     <div>{SEPARATOR}</div>
                     <div style={{ fontWeight: 'bold' }}>📦 DELIVERY DUE:</div>
                     <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
@@ -234,6 +236,16 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                             </div>
                         </div>
                     ))}
+
+                    {/* Special Instructions - MOVED HERE & INLINE */}
+                    {(transaction.customer?.note || transaction.note) && (
+                        <>
+                            <div>{SEPARATOR}</div>
+                            <div style={{ fontWeight: 'bold', fontSize: '13px' }}>
+                                NOTE: {transaction.customer?.note || transaction.note}
+                            </div>
+                        </>
+                    )}
 
                     <div>{SEPARATOR}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>

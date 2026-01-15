@@ -6,13 +6,20 @@ import { LogOut, User, Settings, Database } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { triggerHaptic } from '../utils/haptics';
 
+import { Info } from 'lucide-react';
+import RoleInfoModal from './RoleInfoModal'; // [NEW]
+
 const ProfileMenu = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, role } = useAuth(); // Get Role from Auth
     const { theme, toggleTheme } = useTheme();
     const { openSettings, openData } = useSettings();
     const [showMenu, setShowMenu] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [showRoleInfo, setShowRoleInfo] = useState(false); // [NEW] Role Modal State
     const navigate = useNavigate();
+
+    // Map Roles to Munna Bhai Style
+    const roleName = role === 'admin' ? 'Munna Bhai 🕶️' : role === 'staff' ? 'Circuit 🔌' : 'Mamu 🤕';
 
     useEffect(() => {
         const handler = (e) => {
@@ -105,6 +112,25 @@ const ProfileMenu = () => {
                         <div style={{ padding: '8px', borderBottom: '1px solid var(--color-border)', marginBottom: '8px' }}>
                             <div style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{user?.displayName || 'User'}</div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
+
+                            {/* [NEW] Role Badge */}
+                            <div style={{
+                                marginTop: '6px',
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 700
+                            }}>
+                                <span>Role: {roleName}</span>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevent menu close
+                                        triggerHaptic('light');
+                                        setShowRoleInfo(true);
+                                    }}
+                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 2, display: 'flex' }}
+                                >
+                                    <Info size={14} color="var(--color-text-muted)" />
+                                </button>
+                            </div>
                         </div>
 
                         {deferredPrompt && (
@@ -178,6 +204,9 @@ const ProfileMenu = () => {
                     </div>
                 )}
             </div>
+
+            {/* [NEW] Role Info Modal */}
+            <RoleInfoModal isOpen={showRoleInfo} onClose={() => setShowRoleInfo(false)} />
 
             {/* Global Styles for Glow that might be needed if not present globally */}
             <style>{`

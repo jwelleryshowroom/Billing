@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Eraser, Undo, Scissors, Save, X } from 'lucide-react';
+import { useAuth } from '../context/useAuth';
+import AccessDeniedModal from './AccessDeniedModal';
 
 const ImageReviewer = ({ file, onConfirm, onCancel }) => {
+    const { role } = useAuth();
+    const [showAccessDenied, setShowAccessDenied] = useState(false);
     const canvasRef = useRef(null);
     const [originalImage, setOriginalImage] = useState(null);
     const [history, setHistory] = useState([]);
@@ -24,8 +28,8 @@ const ImageReviewer = ({ file, onConfirm, onCancel }) => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
-        // Limit size to stay under 1MB Firestore limit
-        const maxDim = 600;
+        // Limit size to stay under 1MB Firestore limit (Optimized for Mobile Performance)
+        const maxDim = 300; // Reduced from 600 for performance
         let w = img.width;
         let h = img.height;
 
@@ -42,69 +46,84 @@ const ImageReviewer = ({ file, onConfirm, onCancel }) => {
 
     const saveState = () => {
         const canvas = canvasRef.current;
-        setHistory(prev => [...prev.slice(-9), canvas.toDataURL('image/jpeg', 0.8)]); // Keep last 10 states as JPEG
+        setHistory(prev => [...prev.slice(-9), canvas.toDataURL('image/png')]); // Keep last 10 states as PNG for transparency
     };
 
+    // --- Actions ---
     const handleUndo = () => {
         if (history.length <= 1) return;
-        const newHistory = [...history];
-        newHistory.pop(); // Remove current
-        const lastState = newHistory[newHistory.length - 1];
-        setHistory(newHistory);
+        const newHistory = history.slice(0, -1);
+        const previousState = newHistory[newHistory.length - 1];
 
         const img = new Image();
         img.onload = () => {
             const canvas = canvasRef.current;
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear
+            ctx.drawImage(img, 0, 0); // Restore
+            setHistory(newHistory);
         };
-        img.src = lastState;
+        img.src = previousState;
     };
 
-    // --- MAGIC WAND (Flood Fill Transparent) ---
     const handleCanvasClick = (e) => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
 
-        const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
-        const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+        // Calculate scale in case canvas is displayed smaller than actual size
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
 
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
+        const x = Math.floor((e.clientX - rect.left) * scaleX);
+        const y = Math.floor((e.clientY - rect.top) * scaleY);
 
-        // Target Color
-        const targetIdx = (y * canvas.width + x) * 4;
-        const targetR = data[targetIdx];
-        const targetG = data[targetIdx + 1];
-        const targetB = data[targetIdx + 2];
-        const targetA = data[targetIdx + 3];
+        try {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
 
-        if (targetA === 0) return; // Already transparent
+            // Get Target Color
+            const targetIdx = (y * canvas.width + x) * 4;
+            const tr = data[targetIdx];
+            const tg = data[targetIdx + 1];
+            const tb = data[targetIdx + 2];
+            // const ta = data[targetIdx + 3]; // Ignore alpha for target matching usually? Or strictly match?
 
-        // Global Color Erasure with tolerance
-        for (let i = 0; i < data.length; i += 4) {
-            if (data[i + 3] === 0) continue;
+            // Simple Color Replacement (Magic Eraser Global)
+            // Ideally this should be a Flood Fill if we want contiguous, but Global is often easier/expected for "Remove Background" on simple logos
+            // Let's do Global replacement for "White Background" removal use case
 
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                // const a = data[i + 3];
 
-            const diff = Math.abs(r - targetR) + Math.abs(g - targetG) + Math.abs(b - targetB);
-
-            if (diff < tolerance) {
-                data[i + 3] = 0; // Make Transparent
+                // Check distance
+                if (
+                    Math.abs(r - tr) < tolerance &&
+                    Math.abs(g - tg) < tolerance &&
+                    Math.abs(b - tb) < tolerance
+                ) {
+                    data[i + 3] = 0; // Make Transparent
+                }
             }
-        }
 
-        ctx.putImageData(imageData, 0, 0);
-        saveState();
+            ctx.putImageData(imageData, 0, 0);
+            saveState();
+        } catch (err) {
+            console.error("Canvas manipulation error:", err);
+        }
     };
 
     const handleSave = () => {
-        // Force conversion to JPEG with 0.7 quality to ensure small size
-        const url = canvasRef.current.toDataURL('image/jpeg', 0.7);
+        if (role === 'guest') {
+            setShowAccessDenied(true);
+            return;
+        }
+
+        // Use PNG to preserve transparency
+        const url = canvasRef.current.toDataURL('image/png');
         onConfirm(url);
     };
 
@@ -159,6 +178,12 @@ const ImageReviewer = ({ file, onConfirm, onCancel }) => {
             <div style={{ fontSize: '0.75rem', color: '#888', textAlign: 'center', maxWidth: '300px' }}>
                 Simple Magic Eraser: Tap on the background color (like white) to instantly remove it.
             </div>
+
+            {/* Access Denied Modal */}
+            <AccessDeniedModal
+                isOpen={showAccessDenied}
+                onClose={() => setShowAccessDenied(false)}
+            />
         </div>
     );
 };

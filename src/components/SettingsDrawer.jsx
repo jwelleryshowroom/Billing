@@ -3,7 +3,8 @@ import { useTheme } from '../context/useTheme';
 import { useAuth } from '../context/useAuth';
 import { useInstall } from '../context/useInstall';
 import { useSettings } from '../context/SettingsContext';
-import { Settings as SettingsIcon, Layout, Smartphone, MousePointer2, Eye, Smile, X, Monitor } from 'lucide-react';
+import RoleInfoModal from './RoleInfoModal'; // [NEW]
+import { Settings as SettingsIcon, Layout, Smartphone, MousePointer2, Eye, Smile, X, Monitor, Info, Database } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics';
 
 const SettingsDrawer = () => {
@@ -15,8 +16,11 @@ const SettingsDrawer = () => {
         iconStyle, setIconStyle,
         showMenuLabels, setShowMenuLabels,
         hapticDebug, setHapticDebug,
-        isSettingsOpen, closeSettings
+        isSettingsOpen, closeSettings,
+        openData // [NEW]
     } = useSettings();
+
+    const [showRoleInfo, setShowRoleInfo] = useState(false); // [NEW]
 
     // Prevent body scroll when open
     useEffect(() => {
@@ -106,9 +110,28 @@ const SettingsDrawer = () => {
                         padding: '20px',
                         backgroundColor: _role === 'admin' ? 'rgba(16, 185, 129, 0.1)' : _role === 'staff' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                         borderRadius: '20px',
-                        border: `1px solid ${_role === 'admin' ? 'rgba(16, 185, 129, 0.3)' : _role === 'staff' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                        border: `1px solid ${_role === 'admin' ? 'rgba(16, 185, 129, 0.3)' : _role === 'staff' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                        position: 'relative' // For Info Icon positioning
                     }}>
+                        <button
+                            onClick={() => {
+                                triggerHaptic('light');
+                                setShowRoleInfo(true);
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: '12px',
+                                right: '12px',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: 'var(--color-text-muted)'
+                            }}
+                        >
+                            <Info size={18} />
+                        </button>
                         <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>v1.5.5 • Enterprise Edition</div>
                             <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 700, letterSpacing: '1px' }}>
                                 Current Role
                             </div>
@@ -120,11 +143,47 @@ const SettingsDrawer = () => {
                             }}>
                                 {_role === 'admin' ? 'Munna Bhai 🕶️' : _role === 'staff' ? 'Circuit 🔌' : 'Mamu 🤕'}
                             </div>
-                            <div style={{ fontSize: '0.9rem', color: 'var(--color-text-main)', marginTop: '4px', fontStyle: 'italic', opacity: 0.8 }}>
-                                {_role === 'admin' ? '(The Boss)' : _role === 'staff' ? '(Right Hand)' : '(Just Watching)'}
-                            </div>
                         </div>
                     </div>
+
+                    {/* [NEW] Manage Data Section */}
+                    {_role === 'admin' && (
+                        <div className="setting-section" style={{ marginBottom: '32px' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px', color: 'var(--color-text-main)' }}>Data Management</h3>
+                            <div
+                                onClick={() => {
+                                    triggerHaptic('light');
+                                    openData();
+                                    closeSettings();
+                                }}
+                                style={{
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '16px',
+                                    padding: '16px',
+                                    cursor: 'pointer',
+                                    background: 'var(--color-bg-secondary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px'
+                                }}
+                            >
+                                <div style={{
+                                    padding: '10px',
+                                    borderRadius: '12px',
+                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    color: '#3B82F6'
+                                }}>
+                                    <Database size={20} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>Manage Database</div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Backup, Restore & Reset</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {_role === 'admin' && <div style={{ width: '100%', height: '1px', background: 'var(--color-border)', marginBottom: '32px' }}></div>}
+
 
                     {/* Dashboard View Mode */}
                     <div className="setting-section" style={{ marginBottom: '32px' }}>
@@ -260,19 +319,18 @@ const SettingsDrawer = () => {
                                 style={{
                                     width: '100%', padding: '16px', borderRadius: '16px',
                                     background: 'var(--color-primary)', color: 'white', border: 'none',
-                                    fontWeight: 700, cursor: 'pointer'
+                                    fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                                 }}
                             >
-                                Install App to Home Screen
+                                Install App to Home Screen <span style={{ background: 'var(--color-bg-secondary)', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', color: 'var(--color-text-main)' }}>v1.8.3</span>
                             </button>
                         </div>
                     )}
 
                     {/* Version Footer */}
-                    <div style={{ marginTop: 'auto', paddingTop: '20px', textAlign: 'center' }}>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                            The Classic Confection v1.5.0
-                        </p>
+                    <div style={{ textAlign: 'center', marginTop: '20px', padding: '20px', borderTop: '1px solid var(--color-border)' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Classic Confection v1.8.3</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>Print Preview Fixes</div>
                     </div>
                 </div>
             </div>
@@ -288,6 +346,7 @@ const SettingsDrawer = () => {
                 .hide-scrollbar::-webkit-scrollbar { display: none; }
                 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
+            <RoleInfoModal isOpen={showRoleInfo} onClose={() => setShowRoleInfo(false)} />
         </div>
     );
 };

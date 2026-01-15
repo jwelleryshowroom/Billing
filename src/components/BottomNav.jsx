@@ -24,7 +24,7 @@ const BottomNav = () => {
     const dockHeight = 64;
     const distanceLimit = 240;
     const scaleFactor = isMobile ? 1.5 : 2.4; // Slightly increased for mobile visibility
-    const smoothing = isMobile ? 0.2 : 0.15; // Snappier on mobile
+    const smoothing = isMobile ? 0.4 : 0.35; // Significantly higher for macOS-like snappiness
 
     const mouseX = useRef(null);
     const dockRef = useRef(null);
@@ -228,7 +228,7 @@ const BottomNav = () => {
                     position: 'fixed', bottom: 0, left: '50%',
                     transform: `translateX(-50%) translateY(${isHidden ? '100%' : '0%'})`,
                     zIndex: 9999,
-                    transition: 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                    transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                     paddingBottom: '20px',
                     height: 'auto', pointerEvents: isHidden ? 'none' : 'auto'

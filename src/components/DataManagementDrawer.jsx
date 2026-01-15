@@ -61,11 +61,14 @@ const DataManagementDrawer = () => {
 
     const handleDeleteClick = (group) => {
         if (role !== 'admin') {
+            const isCircuit = role === 'staff';
             setConfirmModal({
                 show: true,
                 isAccessDenied: true,
-                title: 'Access Denied',
-                message: 'You need Admin permissions to delete bulk data.'
+                title: isCircuit ? 'Apun Se Na Hoga ✋' : 'Oye Mamu! 🛑',
+                message: isCircuit
+                    ? 'Ae Circuit! Tu hafte vasuli kar na. Delete Munna Bhai karega! 🔫'
+                    : '"Mamu idhar ghumne ka, delete kahe ko kar rela hai?" (Only Admin can delete)'
             });
             return;
         }
@@ -82,15 +85,15 @@ const DataManagementDrawer = () => {
             setConfirmModal({
                 show: true,
                 isAccessDenied: true,
-                title: 'Access Denied',
-                message: 'Only Administrators can wipe the entire database.'
+                title: 'Apun Ka Elaaka Nahi Hai! 🛑',
+                message: 'Only the Big Boss (Munna Bhai) can wipe the database. Tere se na ho payega!'
             });
             return;
         }
         setConfirmModal({
             show: true,
             range: 'all',
-            title: 'Reset Everything?',
+            title: 'Sab Khatam? (Reset Everything)',
             message: 'DANGER: This will wipe the ENTIRE database. Every single record will be lost forever.'
         });
     };

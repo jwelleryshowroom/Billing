@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
-import bgImage from '../assets/bakery_bg.png';
+import bgImage from '../assets/bakery_bg.webp';
 
 const Login = () => {
     const { login } = useAuth();

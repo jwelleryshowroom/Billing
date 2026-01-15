@@ -102,7 +102,8 @@ const ProductModal = ({ isOpen, onClose, onSave, initialItem, mode = 'add' }) =>
                         style={{
                             width: '120px', height: '120px',
                             borderRadius: '16px',
-                            background: 'var(--color-bg-secondary)',
+                            background: `url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0ib3BhY2l0eTogMC4xIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiM1NTUiIC8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiM1NTUiIC8+PC9zdmc+'), #fff`,
+                            backgroundSize: '20px 20px',
                             border: '2px dashed var(--color-border)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             overflow: 'hidden', position: 'relative',

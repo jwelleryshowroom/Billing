@@ -33,7 +33,7 @@ const ExportModal = ({ isOpen, onClose }) => {
 
     const exportData = (rangeType, specificRange = null) => {
         if (isGuest) {
-            setError('Access Denied: Visitors cannot download business records.');
+            setError('Oye Mamu! 🤕 Visitors cannot steal (download) business records.');
             setTimeout(() => setError(''), 3000);
             return null; // Return null explicitly
         }

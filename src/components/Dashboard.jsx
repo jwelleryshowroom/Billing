@@ -4,6 +4,7 @@ import { useTheme } from '../context/useTheme';
 import { useAuth } from '../context/useAuth';
 import TransactionForm from './TransactionForm';
 import Modal from './Modal';
+import AccessDeniedModal from './AccessDeniedModal';
 import { triggerHaptic } from '../utils/haptics';
 import { format } from 'date-fns';
 import { TrendingUp, TrendingDown, Wallet, Trash2, ChevronDown, ChevronUp, ShoppingBag, ShieldAlert } from 'lucide-react';
@@ -57,7 +58,8 @@ const Dashboard = () => {
     };
 
     const handleDeleteClick = (id) => {
-        if (role === 'guest') {
+        // [MODIFIED] Block both Guest and Staff
+        if (role !== 'admin') {
             setAccessDeniedModal(true);
             return;
         }
@@ -339,41 +341,16 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Access Denied Modal (Glassy) */}
-            {
-                accessDeniedModal && (
-                    <div style={{
-                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: 'rgba(0,0,0,0.4)',
-                        backdropFilter: 'blur(8px)',
-                        zIndex: 1000,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}>
-                        <div className="glass" style={{
-                            width: '85%', maxWidth: '300px', padding: '24px',
-                            borderRadius: '24px',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                            textAlign: 'center'
-                        }}>
-                            <div style={{ color: 'var(--color-text-muted)', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
-                                <ShieldAlert size={48} className="text-secondary" />
-                            </div>
-                            <h3 style={{ fontSize: '1.25rem', marginBottom: '8px', fontWeight: 700 }}>Access Denied</h3>
-                            <p style={{ color: 'var(--color-text-muted)', marginBottom: '24px', lineHeight: 1.5, fontSize: '0.95rem' }}>
-                                You can view data, but you cannot add or delete anything.
-                            </p>
-                            <button
-                                onClick={() => setAccessDeniedModal(false)}
-                                className="btn btn-primary"
-                                style={{ width: '100%', padding: '12px', borderRadius: '12px' }}
-                            >
-                                Understood
-                            </button>
-                        </div>
-                    </div>
-                )
-            }
+            {/* Access Denied Modal (Standardized) */}
+            <AccessDeniedModal
+                isOpen={accessDeniedModal}
+                onClose={() => setAccessDeniedModal(false)}
+                title={role === 'staff' ? 'Munna Bhai Only! 🛑' : 'Circuit Only! 🛑'}
+                message={role === 'staff'
+                    ? "Ae Circuit! Tu hafte vasuli kar na. Delete Munna Bhai karega! 🔫"
+                    : '"Mamu idhar ghumne ka, delete kahe ko kar rela hai?" 🤕'}
+                role={role}
+            />
 
             {/* Popup View Modal */}
             <Modal

@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
 import { LogOut, User, Settings, Database } from 'lucide-react';
+import { Outlet, useLocation } from 'react-router-dom';
+import BottomNav from './BottomNav';
+import NetworkStatus from './NetworkStatus';
 
 import ProfileMenu from './ProfileMenu';
 
@@ -45,8 +48,15 @@ const Header = () => {
 };
 
 const Layout = ({ children, setCurrentView }) => {
+    // Determine if we are on a page that needs full layout or if we use Outlet
+    const location = useLocation?.();
+    const isAuthPage = location?.pathname === '/login';
+
+    if (isAuthPage) return <Outlet />;
+
     return (
         <div className="container">
+            <NetworkStatus />
             <Header setCurrentView={setCurrentView} />
             <main style={{
                 flex: 1,
@@ -55,8 +65,9 @@ const Layout = ({ children, setCurrentView }) => {
                 display: 'flex',
                 flexDirection: 'column'
             }}>
-                {children}
+                {children || <Outlet />}
             </main>
+            {/* Show BottomNav on mobile if needed, though mostly handled by specific pages */}
         </div>
     );
 };

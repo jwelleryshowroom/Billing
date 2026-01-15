@@ -243,10 +243,28 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
                     <button
                         type="submit"
                         disabled={!amount || isNaN(parseFloat(amount))}
-                        className="btn btn-danger"
-                        style={{ width: '100%', opacity: (!amount || isNaN(parseFloat(amount))) ? 0.5 : 1 }}
-                        onClick={() => triggerHaptic('hover')}
+                        className="btn-premium-hover"
+                        style={{
+                            width: '100%',
+                            padding: '14px',
+                            borderRadius: '14px',
+                            background: 'var(--color-danger)',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: 700,
+                            fontSize: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            opacity: (!amount || isNaN(parseFloat(amount))) ? 0.6 : 1,
+                            marginTop: '12px',
+                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                        }}
+                        onClick={() => triggerHaptic('light')}
                     >
+                        <MinusCircle size={20} />
                         Add Expense
                     </button>
                 </form>

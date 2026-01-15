@@ -107,6 +107,29 @@ export const TransactionProvider = ({ children }) => {
         }
     };
 
+    // [Refactored] Helper for Safe Batch Deletion (Chunks of 450)
+    const safeBatchDelete = async (querySnapshot) => {
+        const MAX_BATCH_SIZE = 450;
+        const docs = querySnapshot.docs;
+        const chunks = [];
+
+        // Split docs into chunks
+        for (let i = 0; i < docs.length; i += MAX_BATCH_SIZE) {
+            chunks.push(docs.slice(i, i + MAX_BATCH_SIZE));
+        }
+
+        // Process chunks sequentially
+        let deletedCount = 0;
+        for (const chunk of chunks) {
+            const batch = writeBatch(db);
+            chunk.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            deletedCount += chunk.length;
+            console.log(`Deleted batch of ${chunk.length} items...`);
+        }
+        return deletedCount;
+    };
+
     const deleteTransactionsByDateRange = async (startDate, endDate) => {
         try {
             const q = query(
@@ -115,10 +138,14 @@ export const TransactionProvider = ({ children }) => {
                 where('date', '<=', endDate)
             );
             const snapshot = await getDocs(q);
-            const batch = writeBatch(db);
-            snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-            await batch.commit();
-            showToast(`Cleared ${snapshot.size} records.`, "success");
+
+            if (snapshot.empty) {
+                showToast("No records found in range.", "info");
+                return;
+            }
+
+            const count = await safeBatchDelete(snapshot);
+            showToast(`Cleared ${count} records safely.`, "success");
         } catch (error) {
             console.error("Error deleting data range:", error);
             showToast("Failed to clear data.", "error");
@@ -128,10 +155,14 @@ export const TransactionProvider = ({ children }) => {
     const clearAllTransactions = async () => {
         try {
             const snapshot = await getDocs(collection(db, 'transactions'));
-            const batch = writeBatch(db);
-            snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-            await batch.commit();
-            showToast("Database wiped successfully.", "success");
+
+            if (snapshot.empty) {
+                showToast("Database is already empty.", "info");
+                return;
+            }
+
+            const count = await safeBatchDelete(snapshot);
+            showToast(`Database wiped (${count} records).`, "success");
         } catch (error) {
             console.error("Error clearing database:", error);
             showToast("Failed to wipe database.", "error");

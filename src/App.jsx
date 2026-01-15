@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
 import { TransactionProvider } from './context/TransactionContext';
@@ -20,38 +20,46 @@ import Login from './components/Login';
 import InstallPrompt from './components/InstallPrompt';
 import PendingApproval from './components/PendingApproval';
 import BottomNav from './components/BottomNav';
-import Billing from './components/Billing';
-import Orders from './components/Orders';
-import Inventory from './components/Inventory';
 import HapticHUD from './components/HapticHUD';
-import PublicInvoice from './components/PublicInvoice';
-import ErrorBoundary from './components/ErrorBoundary'; // [NEW]
-import { setupGlobalErrorListeners } from './utils/logger'; // [NEW]
+import ErrorBoundary from './components/ErrorBoundary';
+import { setupGlobalErrorListeners } from './utils/logger';
+import SuspenseLoader from './components/SuspenseLoader'; // [NEW]
 
-// Lazy Load Heavy Components (Removing from here as they are now in Home.jsx or not needed globally)
-// We keep Routes clean
+// [Refactor] Lazy Load Heavy Components for Performance
+const Billing = lazy(() => import('./components/Billing'));
+const Orders = lazy(() => import('./components/Orders'));
+const Inventory = lazy(() => import('./components/Inventory'));
+const PublicInvoice = lazy(() => import('./components/PublicInvoice'));
+// Analytics & Reports are currently inside Home/Dashboard, but if referenced by Route, lazy load them.
+// Currently MainLayout defines routes.
+
+import { AnimatePresence } from 'framer-motion';
+import PageTransition from './components/PageTransition';
 
 const MainLayout = () => {
-  // We don't need useTheme here anymore for the glow if it's handled in Home/Layout
+  const location = useLocation();
 
   return (
     <div style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/inventory" element={<Inventory />} />
-      </Routes>
+      <Suspense fallback={<SuspenseLoader />}>
+        <AnimatePresence mode="wait" initial={false}>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+            <Route path="/billing" element={<PageTransition><Billing /></PageTransition>} />
+            <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
+            <Route path="/inventory" element={<PageTransition><Inventory /></PageTransition>} />
+          </Routes>
+        </AnimatePresence>
+      </Suspense>
       <BottomNav />
     </div>
   );
 };
 
-// [NEW] Wrapper to pass User Context to ErrorBoundary
+// Wrapper to pass User Context to ErrorBoundary
 const ErrorBoundaryWrapper = ({ children }) => {
   const { user } = useAuth();
 
-  // Setup Global Listeners (Window errors) when user is available
   useEffect(() => {
     setupGlobalErrorListeners(user);
   }, [user]);
@@ -99,13 +107,15 @@ const ProtectedApp = () => {
 
 const AppContent = () => {
   return (
-    <Routes>
-      {/* Public Route for Smart Invoice Link - OPEN TO EVERYONE */}
-      <Route path="/view/:orderId" element={<PublicInvoice />} />
+    <Suspense fallback={<SuspenseLoader />}>
+      <Routes>
+        {/* Public Route - Lazy Loaded */}
+        <Route path="/view/:orderId" element={<PublicInvoice />} />
 
-      {/* Protected Routes - REQUIRE LOGIN */}
-      <Route path="/*" element={<ProtectedApp />} />
-    </Routes>
+        {/* Protected Routes */}
+        <Route path="/*" element={<ProtectedApp />} />
+      </Routes>
+    </Suspense>
   );
 };
 
@@ -116,7 +126,6 @@ function App() {
         <InstallProvider>
           <ToastProvider>
             <ThemeProvider>
-              {/* Wrap Inner Content with Error Boundary that has access to Auth */}
               <ErrorBoundaryWrapper>
                 <AppContent />
               </ErrorBoundaryWrapper>

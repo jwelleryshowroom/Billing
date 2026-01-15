@@ -290,6 +290,18 @@ const PublicInvoice = () => {
                         ))}
                     </div>
 
+                    {/* Special Instructions for Public Invoice */}
+                    {(transaction.customer?.note || transaction.note) && (
+                        <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f9fafb', borderRadius: '0.5rem', border: '1px dashed #d1d5db' }}>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                Special Instructions
+                            </div>
+                            <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+                                {transaction.customer?.note || transaction.note}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="totals">
                         <div className="total-row">
                             <span>Subtotal</span>

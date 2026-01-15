@@ -64,12 +64,22 @@ service cloud.firestore {
     
     // 3. Inventory Items (Menu)
     match /inventory_items/{itemId} {
-      allow read, write: if isAuthenticated();
+      // 📖 READ: Authenticated users (Guests, Staff, Admin) can see the menu
+      allow read: if isAuthenticated();
+      
+      // 🔒 WRITE: Only Staff and Admins can Add/Edit/Delete
+      allow write: if isStaff();
     }
 
     // 4. Customers Directory (CRM)
     match /customers/{phone} {
       allow read, write: if isStaff();
+    }
+
+    // 5. Error Logs (Automatic Reporting)
+    match /error_logs/{logId} {
+      allow create: if isStaff();
+      allow read, update, delete: if isAdmin();
     }
     
   }
