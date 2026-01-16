@@ -6,10 +6,13 @@ import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/useTheme';
 
 const BottomNav = () => {
-    const { menuBarMode, iconStyle, showMenuLabels } = useSettings();
+    const { menuBarMode, iconStyle, showMenuLabels, setNavVisible } = useSettings();
     const { theme } = useTheme();
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    const [isHovered, setIsHovered] = useState(false);
+    const [isHovered, setIsHovered] = useState(false); // Controls Magnification
+    const [isVisible, setIsVisible] = useState(false); // Controls Appearance
+    const hideTimeoutRef = useRef(null);
+
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -122,9 +125,13 @@ const BottomNav = () => {
     };
 
     const handleTouchStart = (e) => {
+        // Cancel any pending hide
+        if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+
         const touch = e.touches[0];
         mouseX.current = touch.clientX;
         setIsHovered(true);
+        setIsVisible(true); // Show immediately
 
         // Detect which item we started on
         if (dockRef.current) {
@@ -141,9 +148,11 @@ const BottomNav = () => {
     };
 
     const handleTouchMove = (e) => {
+        if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
         const touch = e.touches[0];
         mouseX.current = touch.clientX;
         setIsHovered(true);
+        setIsVisible(true);
 
         // --- NEW: Detect Hover for Sweep Haptics ---
         if (dockRef.current) {
@@ -172,48 +181,117 @@ const BottomNav = () => {
 
     const handleMouseLeave = () => {
         mouseX.current = null;
-        setIsHovered(false);
+        setIsHovered(false); // Stop Magnification Immediately
         setHoveredIndex(null);
         lastHapticIndex.current = null;
         touchStartIndex.current = null;
+
+        // Graceful Exit: Wait 3 seconds before hiding
+        if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = setTimeout(() => {
+            setIsVisible(false);
+        }, 3000);
     };
 
     const handleMouseEnter = () => {
+        if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
         setIsHovered(true);
+        setIsVisible(true);
     };
 
     // Reset interaction on navigation - REMOVED to prevent jumpy effect
 
-    // Handle Click Outside to Reset Menu
+    // Global Swipe Detection for Menu Reveal
+    const swipeStartY = useRef(null);
+
     useEffect(() => {
-        const handleGlobalInteraction = (e) => {
+        const handleGlobalTouchStart = (e) => {
+            swipeStartY.current = e.touches[0].clientY;
+
+            // Existing Logic: Check for outside clicks
+            const handleGlobalInteractionCheck = (event) => {
+                // Check if interaction is the trigger zone
+                if (event.target.hasAttribute('data-nav-trigger')) return;
+                // Check if interaction is outside the dock container
+                if (dockRef.current && !dockRef.current.contains(event.target)) {
+                    handleMouseLeave();
+                }
+            };
+            handleGlobalInteractionCheck(e);
+        };
+
+        const handleGlobalTouchMove = (e) => {
+            if (swipeStartY.current === null) return;
+
+            const currentY = e.touches[0].clientY;
+            const diffY = currentY - swipeStartY.current;
+
+            // Threshold for swipe detection
+            if (Math.abs(diffY) > 15) {
+                if (diffY > 0) {
+                    // Swiping DOWN (Finger moves down) -> REVEAL Menu
+                    // (User typically swipes down to scroll up to see top content, usually associated with revealing bars)
+                    // Wait, usually "Scroll Up" (content goes down) reveals bars.
+                    // That corresponds to Finger Moving DOWN.
+                    setIsVisible(true);
+                    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+                } else {
+                    // Swiping UP (Finger moves up) -> HIDE Menu
+                    // (User scrolling down to read more content)
+                    setIsVisible(false);
+                }
+                swipeStartY.current = currentY; // Reset for continuous detection
+            }
+        };
+
+        const handleGlobalClick = (e) => {
+            // Check if interaction is the trigger zone
+            if (e.target.hasAttribute('data-nav-trigger')) return;
             // Check if interaction is outside the dock container
             if (dockRef.current && !dockRef.current.contains(e.target)) {
+                // Logic to close? We already have 3s timeout.
+                // Maybe instant close on click outside?
+                // Let's rely on the 3s timeout or explicit close if user wants.
+                // For now, let's keep the existing "MouseLeave" logic which starts the timer.
                 handleMouseLeave();
             }
         };
 
-        // Listen for both touch and click to cover all bases
-        document.addEventListener('touchstart', handleGlobalInteraction, { passive: true });
-        document.addEventListener('click', handleGlobalInteraction);
+        document.addEventListener('touchstart', handleGlobalTouchStart, { passive: true });
+        document.addEventListener('touchmove', handleGlobalTouchMove, { passive: true });
+        document.addEventListener('click', handleGlobalClick);
 
         return () => {
-            document.removeEventListener('touchstart', handleGlobalInteraction);
-            document.removeEventListener('click', handleGlobalInteraction);
+            document.removeEventListener('touchstart', handleGlobalTouchStart);
+            document.removeEventListener('touchmove', handleGlobalTouchMove);
+            document.removeEventListener('click', handleGlobalClick);
+            if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
         };
     }, []);
 
-    const isHidden = menuBarMode === 'disappearing' && !isHovered;
+    const isHidden = menuBarMode === 'disappearing' && !isVisible;
+
+    // Sync visibility state
+    useEffect(() => {
+        setNavVisible(!isHidden);
+    }, [isHidden, setNavVisible]);
 
     return (
         <>
             {menuBarMode === 'disappearing' && (
                 <div
+                    data-nav-trigger="true"
                     onMouseEnter={handleMouseEnter}
+                    onTouchStart={handleTouchStart}
+                    // [NEW] Expanded Trigger Zone
+                    // Sits BEHIND the Mini Cart (z:10000) but covers bottom area
+                    // Allows clicking "View Cart", but clicking ABOVE/AROUND acts as nav trigger
                     style={{
                         position: 'fixed', bottom: 0, left: 0, right: 0,
-                        height: '20px', zIndex: 9998,
-                        display: isHidden ? 'block' : 'none'
+                        height: '150px', zIndex: 9995,
+                        display: isHidden ? 'block' : 'none',
+                        pointerEvents: 'auto',
+                        background: 'transparent'
                     }}
                 />
             )}
@@ -227,7 +305,7 @@ const BottomNav = () => {
                 style={{
                     position: 'fixed', bottom: 0, left: '50%',
                     transform: `translateX(-50%) translateY(${isHidden ? '100%' : '0%'})`,
-                    zIndex: 9999,
+                    zIndex: 10002,
                     transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                     paddingBottom: '20px',
@@ -324,7 +402,7 @@ const BottomNav = () => {
                                 )}
 
                                 {/* Mac-style Tooltip */}
-                                {(hoveredIndex === index) && (
+                                {(showMenuLabels && hoveredIndex === index) && (
                                     <div style={{
                                         position: 'absolute',
                                         top: '-45px', // Float well above

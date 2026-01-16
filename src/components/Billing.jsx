@@ -8,6 +8,7 @@ import { useToast } from '../context/useToast';
 import { useCustomers } from '../context/CustomerContext';
 import { ChevronRight, ChevronLeft, Trash2, AlertTriangle, Zap, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import { useTheme } from '../context/useTheme';
 
 import { toTitleCase, getSmartEmoji } from '../utils/smartHelpers';
 import { triggerHaptic } from '../utils/haptics';
@@ -17,14 +18,16 @@ import ProductGrid from './Billing/ProductGrid';
 import CartContent from './Billing/CartContent';
 import BillingHeader from './Billing/BillingHeader';
 import TransactionPreviewModal from './Billing/TransactionPreviewModal';
-import AccessDeniedModal from './AccessDeniedModal'; // [NEW]
+import AccessDeniedModal from './AccessDeniedModal';
+import MiniCartSheet from './Billing/MiniCartSheet';
 
 
 const Billing = () => {
     const { transactions, addTransaction } = useTransactions();
+    const { theme, toggleTheme } = useTheme();
     const { items: allItems, addItem: addInventoryItem, updateItem } = useInventory();
     const { user, role } = useAuth();
-    const { showToast } = useToast();
+    const { showToast, removeToast } = useToast();
     const { addOrUpdateCustomer, getCustomerByPhone } = useCustomers(); // [NEW] Context
     const location = useLocation();
 
@@ -86,7 +89,8 @@ const Billing = () => {
             category: quickAddCategory,
             stock: quickAddTrackStock ? (parseInt(quickAddStock) || 0) : 0,
             trackStock: quickAddTrackStock,
-            image: quickAddImage // Use selected image
+            image: quickAddImage, // Use selected image
+            imageEmoji: suggestedEmoji || '🧁' // Persist emoji or default
         };
         addInventoryItem(newItem);
         addToCart(newItem);
@@ -141,7 +145,6 @@ const Billing = () => {
         const saved = localStorage.getItem('payment_backup');
         return saved ? JSON.parse(saved) : { advance: '', type: 'cash' };
     }); // cash, upi
-
 
     // [NEW] Persist Mode & Draft Data (Moved here to avoid ReferenceError)
     useEffect(() => {
@@ -231,7 +234,8 @@ const Billing = () => {
             if (existing) {
                 return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
             }
-            return [...prev, { ...item, qty: 1 }];
+            const emoji = item.imageEmoji || item.emoji || getSmartEmoji(item.name);
+            return [...prev, { ...item, emoji, qty: 1 }];
         });
     };
 
@@ -269,6 +273,32 @@ const Billing = () => {
 
         const isOrder = mode === 'order';
 
+        // [NEW] Smart Description Logic
+        const itemNames = cart.map(i => i.name).join(', ');
+        const itemCount = cart.length;
+        let description = '';
+
+        if (!isOrder) {
+            // Quick Mode
+            description = `Quick Sale of ${itemCount} items (${itemNames})`;
+        } else {
+            // Order Mode
+            const customerName = customerDetails.name || '';
+            const isBooking = handoverMode === 'later';
+
+            if (isBooking) {
+                // Booking Order (Book Later)
+                description = `Booking Order for ${customerName || 'Customer'} (${itemNames})`;
+            } else {
+                // Take Away (Take Now)
+                if (customerName) {
+                    description = `Take Away Order for ${customerName} (${itemNames})`;
+                } else {
+                    description = `Take Away Order ${itemCount} items (${itemNames})`;
+                }
+            }
+        }
+
         return {
             type: isOrder ? 'order' : 'sale',
             amount: isOrder ? advanceAmount : totalAmount, // Cash Basis: Only record what is paid NOW
@@ -284,9 +314,7 @@ const Billing = () => {
                 // Do NOT spread ...item here to avoid carrying over Firestore metadata/prototypes
             })),
             date: new Date().toISOString(),
-            description: isOrder
-                ? `Order for ${customerDetails.name || 'Customer'} (${handoverMode})`
-                : `Quick Sale (${cart.length} items)`,
+            description: description, // [FIXED] Use computed variable
             customer: isOrder ? {
                 name: customerDetails.name || 'Walk-in',
                 phone: customerDetails.phone || '',
@@ -314,7 +342,7 @@ const Billing = () => {
 
         setCustomerDetails({ name: '', phone: '', note: '' });
         setPayment({ advance: '', type: 'cash' });
-        setMode('quick');
+        // setMode('quick'); // [CHANGED] Keep previous mode as requested by user
         setHandoverMode('later');
     };
 
@@ -349,9 +377,11 @@ const Billing = () => {
         setShowMobileCart(false);
         setIsPrinting(true);
 
+        let savingToastId = null;
+
         // 2. Show Processing Toast Immediately
         if (!shouldPrint) {
-            showToast("Saving...", "info");
+            savingToastId = showToast("Saving...", "info");
         }
 
         try {
@@ -379,6 +409,9 @@ const Billing = () => {
             resetUI();
 
             // 4. Success Handling
+            // [NEW] Remove "Saving..." toast immediately
+            if (savingToastId) removeToast(savingToastId);
+
             if (shouldPrint) {
                 // Enhance preview data with real ID if we got one and want to show it
                 const finalData = docRef ? { ...data, id: docRef.id } : data;
@@ -402,6 +435,7 @@ const Billing = () => {
 
         } catch (error) {
             console.error("Checkout Error:", error);
+            if (savingToastId) removeToast(savingToastId); // Dismiss saving toast on error too
             setIsPrinting(false);
             processingRef.current = false; // Release Lock
         }
@@ -429,7 +463,9 @@ const Billing = () => {
         <div style={{ height: '100dvh', background: 'transparent', color: 'var(--color-text-primary)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
             {/* 1. THE HEADER */}
+            {/* 1. THE HEADER */}
             <BillingHeader
+                isMobile={isMobile}
                 showMobileSearch={showMobileSearch}
                 setShowMobileSearch={setShowMobileSearch}
                 searchTerm={searchTerm}
@@ -472,40 +508,55 @@ const Billing = () => {
                 />
 
                 {/* 3. RIGHT SIDE: CART (Desktop Only) */}
-                <div className="cart-pane" style={{ background: 'var(--color-bg-surface-transparent)', backdropFilter: 'blur(12px)', borderLeft: '1px solid var(--color-border)' }}>
-                    <CartContent
-                        isMobile={false}
-                        mode={mode}
-                        cart={cart}
-                        totalAmount={totalAmount}
-                        payment={payment}
-                        setPayment={setPayment}
-                        customerDetails={customerDetails}
-                        setCustomerDetails={setCustomerDetails}
-                        handoverMode={handoverMode}
-                        setHandoverMode={setHandoverMode}
-                        deliveryDetails={deliveryDetails}
-                        setDeliveryDetails={setDeliveryDetails}
-                        updateQty={updateQty}
-                        handleCheckout={handleCheckout}
-                        balanceDue={balanceDue}
-                        isPrinting={isPrinting}
-                        clearCart={clearCart}
-                        existingCustomer={existingCustomer}
-                    />
-                </div>
-
-                {/* MOBILE FLOATING CART BAR */}
-                {cart.length > 0 && (
-                    <div className="mobile-cart-bar" onClick={() => setShowMobileCart(true)}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>{cart.length} ITEMS</span>
-                            <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>₹{totalAmount}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-                            View Cart <ChevronRight size={18} />
-                        </div>
+                {!isMobile && (
+                    <div className="cart-pane" style={{
+                        flex: '0 0 34%', // Restored wider size
+                        minWidth: '400px',
+                        background: 'var(--color-bg-surface)',
+                        borderRadius: '24px',
+                        marginLeft: '0',
+                        display: 'flex', flexDirection: 'column',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        height: 'calc(100vh - 100px)',
+                        // [REQUEST] MAKE THE CART PANE MARGING FROM TOP 12px
+                        margin: '12px 16px 16px 0',
+                        // [REQUEST] Pop effect (shadow)
+                        boxShadow: '0 10px 40px -10px rgba(0,0,0,0.3)',
+                        border: '1px solid var(--color-border)'
+                    }}>
+                        <CartContent
+                            isMobile={false}
+                            mode={mode}
+                            setMode={setMode}
+                            cart={cart}
+                            totalAmount={totalAmount}
+                            payment={payment}
+                            setPayment={setPayment}
+                            customerDetails={customerDetails}
+                            setCustomerDetails={setCustomerDetails}
+                            handoverMode={handoverMode}
+                            setHandoverMode={setHandoverMode}
+                            deliveryDetails={deliveryDetails}
+                            setDeliveryDetails={setDeliveryDetails}
+                            updateQty={updateQty}
+                            handleCheckout={handleCheckout}
+                            balanceDue={balanceDue}
+                            isPrinting={isPrinting}
+                            clearCart={clearCart}
+                            existingCustomer={existingCustomer}
+                        />
                     </div>
+                )}
+
+                {/* NEW MINI CART SHEET (Mobile Only) */}
+                {isMobile && (
+                    <MiniCartSheet
+                        cart={cart}
+                        onViewCart={() => setShowMobileCart(true)}
+                        savings={0} // Logic for savings can be added later
+                        updateQty={updateQty}
+                    />
                 )}
             </div>
 
@@ -782,7 +833,7 @@ const Billing = () => {
                                     <AlertTriangle size={48} />
                                 </div>
                                 <h3 style={{ fontSize: '1.25rem', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-main)' }}>Clear Cart?</h3>
-                                <p style={{ color: 'var(--color-text-muted)', marginBottom: '24px', lineHeight: 1.5, fontSize: '0.95rem' }}>
+                                <p style={{ color: 'var(--color-text-main)', marginBottom: '24px', lineHeight: 1.5, fontSize: '0.95rem', fontWeight: 500, opacity: 0.9 }}>
                                     Are you sure you want to remove all items from the cart?
                                 </p>
                                 <div style={{ display: 'flex', gap: '12px' }}>

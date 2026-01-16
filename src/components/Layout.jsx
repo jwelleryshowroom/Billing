@@ -47,7 +47,7 @@ const Header = () => {
     );
 };
 
-const Layout = ({ children, setCurrentView }) => {
+const Layout = ({ children, setCurrentView, fullWidth }) => {
     // Determine if we are on a page that needs full layout or if we use Outlet
     const location = useLocation?.();
     const isAuthPage = location?.pathname === '/login';
@@ -55,9 +55,16 @@ const Layout = ({ children, setCurrentView }) => {
     if (isAuthPage) return <Outlet />;
 
     return (
-        <div className="container">
+        <div className="container" style={fullWidth ? { maxWidth: '100vw', padding: 0, height: '100vh', overflow: 'hidden' } : {}}>
             <NetworkStatus />
-            <Header setCurrentView={setCurrentView} />
+            {/* On fullWidth mode (Desktop Bento), we might want the Header to be part of the layout or separate. 
+                For now, let's keep it but maybe it needs padding if container has 0 padding. 
+                Actually, DesktopHome has its own padding. 
+                Let's ensure Header respects standard padding if we remove container padding. 
+            */}
+            <div style={fullWidth ? { padding: '0 24px' } : {}}>
+                <Header setCurrentView={setCurrentView} />
+            </div>
             <main style={{
                 flex: 1,
                 minHeight: 0, // Critical for nested scroll

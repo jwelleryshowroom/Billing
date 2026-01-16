@@ -164,6 +164,16 @@ g {
   scrollbar-width: none;
 }
 
+/* Global No Scrollbar Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .container {
   max-width: var(--max-width);
   margin: 0 auto;

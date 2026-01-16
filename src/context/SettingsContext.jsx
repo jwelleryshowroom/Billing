@@ -46,13 +46,22 @@ export const SettingsProvider = ({ children }) => {
     const openData = () => setIsDataOpen(true);
     const closeData = () => setIsDataOpen(false);
 
+    // Desktop Layout Mode: 'bento' | 'simple'
+    const [homeLayoutMode, setHomeLayoutMode] = useState(() => {
+        return localStorage.getItem('homeLayoutMode') || 'bento';
+    });
+
+    // Track Nav Visibility (Shared State for Floating Layouts)
+    const [navVisible, setNavVisible] = useState(true);
+
     useEffect(() => {
         localStorage.setItem('menuBarMode', menuBarMode);
         localStorage.setItem('iconStyle', iconStyle);
         localStorage.setItem('showMenuLabels', JSON.stringify(showMenuLabels));
         localStorage.setItem('hapticDebug', JSON.stringify(hapticDebug));
         localStorage.setItem('isSettingsOpen', JSON.stringify(isSettingsOpen));
-    }, [menuBarMode, iconStyle, showMenuLabels, hapticDebug, isSettingsOpen]);
+        localStorage.setItem('homeLayoutMode', homeLayoutMode);
+    }, [menuBarMode, iconStyle, showMenuLabels, hapticDebug, isSettingsOpen, homeLayoutMode]);
 
     const value = {
         menuBarMode,
@@ -68,7 +77,11 @@ export const SettingsProvider = ({ children }) => {
         closeSettings,
         isDataOpen,
         openData,
-        closeData
+        closeData,
+        homeLayoutMode,
+        setHomeLayoutMode,
+        navVisible,
+        setNavVisible
     };
 
     return (

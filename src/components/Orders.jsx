@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTransactions } from '../context/useTransactions';
 import { useAuth } from '../context/useAuth';
 import AccessDeniedModal from './AccessDeniedModal';
@@ -36,7 +37,8 @@ const itemVariants = {
 const Orders = () => {
     // Orders Component - Updated Invoice Sharing
     const { transactions, updateTransaction, addTransaction } = useTransactions();
-    const { role } = useAuth(); // [NEW] Get Role
+    const { role } = useAuth();
+    const location = useLocation(); // [NEW]
 
 
     // --- Filtering & Sorting (Extracted to Hook) ---
@@ -47,6 +49,29 @@ const Orders = () => {
         sortBy, setSortBy,
         filteredOrders
     } = useOrderFilters(transactions);
+
+    // [NEW] Handle Home Page Navigation to Specific Order
+    const [highlightedId, setHighlightedId] = useState(null);
+
+    useEffect(() => {
+        if (location.state?.highlightOrderId) {
+            const targetId = location.state.highlightOrderId;
+            setHighlightedId(targetId);
+            setViewMode('card'); // Ensure Card view
+
+            // Scroll to element after render
+            setTimeout(() => {
+                const element = document.getElementById(`order-${targetId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    triggerHaptic('success');
+                }
+            }, 300);
+
+            // Clear state (optional, or keep to maintain highlight)
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state, setViewMode]);
 
     const [isPrinting, setIsPrinting] = useState(false);
 
@@ -94,7 +119,7 @@ const Orders = () => {
 
 
     return (
-        <div className="container" style={{ paddingTop: '20px', paddingBottom: '0', maxWidth: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="container" style={{ padding: isMobile ? '12px 16px' : '24px', paddingBottom: '0', maxWidth: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
             {/* Header & Controls */}
             <OrderFilters
                 isMobile={isMobile}
@@ -110,10 +135,22 @@ const Orders = () => {
 
             {/* Content Area */}
             {filteredOrders.length === 0 ? (
-                <div className="card" style={{ padding: '60px', textAlign: 'center', color: 'var(--color-text-muted)', flex: 1 }}>
-                    <Package size={64} style={{ opacity: 0.3, marginBottom: '20px' }} />
-                    <h3>No {statusFilter} orders</h3>
-                    <p>Try changing filters or search terms.</p>
+                <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    flex: 1, color: 'var(--color-text-muted)',
+                    opacity: 0.8,
+                    marginTop: '40px'
+                }}>
+                    <div style={{
+                        background: 'var(--color-bg-secondary)',
+                        borderRadius: '50%', padding: '24px',
+                        marginBottom: '16px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <Package size={42} strokeWidth={1.5} style={{ opacity: 0.5 }} />
+                    </div>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 600, margin: '0 0 8px 0', color: 'var(--color-text-primary)' }}>No {statusFilter} orders</h3>
+                    <p style={{ margin: 0, fontSize: '0.9rem' }}>Try changing filters or search terms.</p>
                 </div>
             ) : (
                 isMobile || viewMode === 'card' ? (
@@ -137,13 +174,21 @@ const Orders = () => {
                         }}
                     >
                         {filteredOrders.map(order => (
-                            <motion.div key={order.id} variants={itemVariants}>
+                            <motion.div
+                                key={order.id}
+                                id={`order-${order.id}`} // [NEW] ID for scrolling
+                                variants={itemVariants}
+                                initial="hidden"
+                                animate="show"
+                                layout
+                            >
                                 <MobileOrderCard
                                     order={order}
+                                    isHighlighted={highlightedId === order.id} // [NEW] Pass highlight prop
                                     onPrint={handlePrint}
                                     onShare={handleSmartShare}
                                     onDeliver={openDeliveryModal}
-                                    onMarkReady={handleMarkReady} // Pass the handler
+                                    onMarkReady={handleMarkReady}
                                 />
                             </motion.div>
                         ))}
@@ -190,6 +235,9 @@ const Orders = () => {
                                         <motion.tr
                                             key={order.id}
                                             variants={itemVariants}
+                                            initial="hidden"
+                                            animate="show"
+                                            layout
                                             style={{ borderBottom: '1px solid var(--color-border)' }}
                                         >
                                             <td style={{ padding: '16px', fontWeight: 600 }}>#{order.id.slice(-6).toUpperCase()}</td>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTransactions } from '../context/useTransactions';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, format, isSameDay } from 'date-fns';
+import { useTheme } from '../context/useTheme';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Download, BarChart2, Calendar as CalendarIcon, Inbox, PieChart as PieChartIcon, ShoppingBag } from 'lucide-react';
 import Calendar from 'react-calendar';
@@ -151,39 +152,41 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-const EmptyState = () => (
+const EmptyState = ({ isDark }) => (
     <div style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '40px 20px',
-        color: 'var(--color-text-muted)',
+        color: isDark ? '#a1a1aa' : 'var(--color-text-muted)',
         height: '100%',
         textAlign: 'center'
     }}>
         <div style={{
             width: '80px',
             height: '80px',
-            backgroundColor: 'var(--color-bg-body)',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'var(--color-bg-body)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: '16px'
         }}>
-            <Inbox size={40} color="var(--color-primary)" strokeWidth={1.5} />
+            <Inbox size={40} color={isDark ? '#a1a1aa' : "var(--color-primary)"} strokeWidth={1.5} />
         </div>
-        <h3 style={{ fontSize: '1.1rem', marginBottom: '8px', color: 'var(--color-text-main)' }}>No Transactions Found</h3>
-        <p style={{ fontSize: '0.9rem', maxWidth: '250px' }}>
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '8px', color: isDark ? 'white' : 'var(--color-text-main)' }}>No Transactions Found</h3>
+        <p style={{ fontSize: '0.9rem', maxWidth: '250px', color: isDark ? '#71717a' : 'inherit' }}>
             It looks like there's no activity for this period. Try selecting a different date.
         </p>
     </div>
 );
 
-const Reports = ({ setCurrentView }) => {
+const Reports = ({ setCurrentView, isModal, onClose }) => {
     const { transactions, loading, setViewDateRange, currentRange } = useTransactions();
-    const [view, setView] = useState('monthly'); // Default to monthly for performance
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+    const [view, setView] = useState('weekly'); // [FIX] Default to weekly
     const [viewType, setViewType] = useState('transactions'); // 'transactions' | 'items'
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(false);
@@ -295,140 +298,358 @@ const Reports = ({ setCurrentView }) => {
             return `This Week (${format(start, 'dd MMM')} - ${format(end, 'dd MMM')})`;
         }
         if (view === 'monthly') {
-            return `This Month (${format(now, 'MMMM yyyy')})`;
+            return `This Month (${format(now, 'MMM yyyy')})`;
         }
         return `Daily Report (${format(selectedDate, 'dd MMM yyyy')})`;
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            <style>{calendarStyles}</style>
-
-            {/* Controls Header - Static (Flex item) */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, gap: '16px' }}>
             <style>{`
-                /* Hard override for Recharts focus outline */
-                .recharts-wrapper:focus,
-                .recharts-wrapper:active,
-                .recharts-surface:focus,
-                .recharts-layer:focus,
-                div[class^="recharts"]:focus {
-                    outline: none !important;
-                    border: none !important;
+                ${calendarStyles}
+                
+                /* [FIX] seamless calendar override */
+                .react-calendar {
+                    background: transparent !important;
                     box-shadow: none !important;
-                     -webkit-tap-highlight-color: transparent !important;
+                    border: none !important;
+                    color: ${isDark ? '#fed7aa' : 'inherit'} !important; /* [FIX] Warmer text for chocolate theme */
+                }
+                .react-calendar__navigation button {
+                    color: ${isDark ? '#fed7aa' : '#18181b'} !important;
+                }
+                .react-calendar__month-view__days__day {
+                    color: ${isDark ? '#fdba74' : '#18181b'};
+                }
+                .react-calendar__month-view__days__day--neighboringMonth {
+                    color: ${isDark ? '#5d4e46' : '#a1a1aa'} !important;
                 }
                 
+                /* Responsive Reports Styles */
                 .report-nav-btn {
-                    transition: all 0.2s ease;
+                    padding: 16px;
+                    font-size: 1rem;
                 }
-                .report-nav-btn:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                    z-index: 5;
+                .report-title {
+                    font-size: 1.4rem;
                 }
-                .report-nav-btn:active {
-                    transform: translateY(0);
-                    box-shadow: none;
-                }
-
-                .reports-title {
-                    margin: 0;
-                    font-size: 1.25rem;
-                    white-space: nowrap;
-                    color: var(--color-text-main);
-                    font-weight: 700;
-                }
-
-                @media (max-width: 480px) {
-                    .reports-title {
-                        font-size: 0.85rem !important;
+                .report-col-date { width: 18%; }
+                .report-col-desc { width: 57%; }
+                .report-col-amt { width: 25%; }
+                
+                @media (max-width: 640px) {
+                    .report-nav-btn {
+                        padding: 8px 10px !important;
+                        font-size: 0.8rem !important;
+                        border-radius: 12px !important;
                     }
+                    /* INLINE HEADER (COMPACT) */
+                    .report-header {
+                        flex-direction: row !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        margin-bottom: 8px !important;
+                    }
+                    .report-title {
+                        font-size: 0.85rem !important; /* Small font to fit */
+                        white-space: nowrap !important; /* Try to keep one line */
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        flex: 1;
+                        max-width: none !important;
+                    }
+                    /* Shrink Action Buttons */
+                    .report-action-btn {
+                        padding: 6px 10px !important;
+                        font-size: 0.75rem !important;
+                        height: 32px !important; /* Fixed compact height */
+                        gap: 4px !important;
+                    }
+                    
+                    /* Compact Table Text */
+                    th, td {
+                        font-size: 0.8rem !important; 
+                        padding: 10px 0 !important;
+                    }
+                    .report-date-text { font-size: 0.65rem !important; }
+                    
+                    /* Adjust table cols */
+                    .report-col-date { width: 18% !important; }
+                    .report-col-desc { width: 52% !important; }
+                    .report-col-amt { width: 30% !important; }
                 }
             `}</style>
+
+            {/* 1. TOP NAVIGATION ROW (Floating Buttons) */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                {/* Date Toggles */}
+                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+                    {[
+                        { id: 'daily', label: 'Today', icon: '🍕' },
+                        { id: 'weekly', label: 'Week', icon: '🍩' },
+                        { id: 'monthly', label: 'Month', icon: '🥐' }
+                    ].map(item => (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                triggerHaptic('light');
+                                if (item.id === 'daily') {
+                                    setSelectedDate(new Date());
+                                    setShowCalendar(false);
+                                }
+                                setView(item.id);
+                            }}
+                            className="btn-scale report-nav-btn"
+                            style={{
+                                flex: 1,
+                                // padding: '16px', // [MOVED TO CSS]
+                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'white',
+                                borderRadius: '20px',
+                                border: view === item.id ? (isDark ? '2px solid #4ade80' : '2px solid #18181b') : (isDark ? '2px solid rgba(255,255,255,0.05)' : '2px solid transparent'),
+                                boxShadow: view === item.id ? '0 4px 12px rgba(0,0,0,0.08)' : '0 4px 6px rgba(0,0,0,0.02)',
+                                color: view === item.id ? (isDark ? 'white' : '#18181b') : (isDark ? '#a1a1aa' : '#71717a'),
+                                fontWeight: 700,
+                                // fontSize: '1rem', // [MOVED TO CSS]
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                transform: view === item.id ? 'translateY(-2px)' : 'none',
+                                backdropFilter: isDark ? 'blur(10px)' : 'none'
+                            }}
+                        >
+                            {item.label} <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Calendar & Close */}
+                <div style={{ display: 'flex', gap: '12px', marginLeft: '12px' }}>
+                    <button
+                        onClick={() => {
+                            triggerHaptic('light');
+                            setShowCalendar(!showCalendar);
+                        }}
+                        className="btn-scale"
+                        style={{
+                            width: '56px', height: '56px',
+                            backgroundColor: '#4ade80', // Green
+                            borderRadius: '16px',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            boxShadow: '0 4px 10px rgba(74, 222, 128, 0.4)'
+                        }}
+                    >
+                        <CalendarIcon size={24} strokeWidth={2.5} />
+                    </button>
+
+                    {isModal && onClose && (
+                        <button
+                            onClick={onClose}
+                            className="btn-scale"
+                            style={{
+                                padding: '0 20px', height: '56px',
+                                backgroundColor: 'white',
+                                borderRadius: '16px',
+                                border: 'none',
+                                color: '#18181b',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.02)'
+                            }}
+                        >
+                            Close
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Calendar Widget (Conditional - Floating Card) */}
+            {
+                showCalendar && (
+                    <div style={{
+                        animation: 'fadeIn 0.2s ease-out',
+                        flexShrink: 0,
+                        backgroundColor: isDark ? '#1E1B18' : 'white', // [FIX] Chocolate Dark
+                        padding: '16px',
+                        borderRadius: '24px',
+                        boxShadow: isDark ? '0 10px 40px -10px rgba(0,0,0,0.5)' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        border: isDark ? '1px solid #332b29' : 'none'
+                    }}>
+                        <Calendar
+                            onChange={handleDateChange}
+                            value={selectedDate}
+                            maxDate={new Date()}
+                            tileContent={({ date, view }) => view === 'month' && hasTransaction(date) ? <div className="tile-dot"></div> : null}
+                        />
+                    </div>
+                )
+            }
+
+            {/* 2. MAIN CONTENT CARD */}
             <div style={{
-                display: 'flex',
-                gap: '8px',
-                padding: '20px 0 8px', // Even more room for the hover "pop",
-                marginTop: '-10px', // Compensate for the extra padding
-                marginBottom: '10px',
-                flexShrink: 0,
-                overflow: 'visible'
+                backgroundColor: isDark ? '#1E1B18' : 'white', // [FIX] Chocolate Dark
+                borderRadius: '24px',
+                padding: '16px',
+                flex: 1,
+                display: 'flex', flexDirection: 'column',
+                minHeight: '520px',
+                boxShadow: isDark ? '0 10px 40px -10px rgba(0,0,0,0.5)' : '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+                position: 'relative',
+                border: isDark ? '1px solid #332b29' : 'none',
+                overflow: 'hidden'
             }}>
-                <button
-                    onClick={() => {
-                        triggerHaptic('light');
-                        setSelectedDate(new Date());
-                        setView('daily');
-                        setShowCalendar(false);
-                    }}
-                    className={`btn report-nav-btn ${view === 'daily' && isSameDay(selectedDate, new Date()) && !showCalendar ? 'btn-primary' : ''}`}
-                    style={{
-                        flex: 1,
-                        padding: '12px',
-                        backgroundColor: (view === 'daily' && isSameDay(selectedDate, new Date()) && !showCalendar) ? 'var(--color-primary)' : 'var(--color-bg-surface)',
-                        color: (view === 'daily' && isSameDay(selectedDate, new Date()) && !showCalendar) ? 'white' : 'var(--color-text-main)',
-                        border: (view === 'daily' && isSameDay(selectedDate, new Date()) && !showCalendar) ? 'none' : '1px solid var(--color-border)',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        borderRadius: '16px'
-                    }}
-                >
-                    Today 🍕
-                </button>
+                {/* Title & Actions */}
+                <div className="report-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h3 className="report-title" style={{ margin: 0, fontWeight: 800, color: isDark ? '#fff7ed' : '#18181b' }}>{getTitle()}</h3>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        {!isModal && (
+                            <button
+                                onClick={() => { triggerHaptic('light'); setCurrentView('analytics'); }}
+                                className="report-action-btn"
+                                style={{
+                                    padding: '8px 16px', borderRadius: '12px', border: '1px solid #e4e4e7',
+                                    backgroundColor: 'white', fontWeight: 600, color: '#16aec8',
+                                    display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer'
+                                }}
+                            >
+                                <PieChartIcon size={18} /> Analytics
+                            </button>
+                        )}
+                        <button
+                            onClick={() => { triggerHaptic('light'); setShowExportModal(true); }}
+                            className="report-action-btn"
+                            style={{
+                                padding: '8px 16px', borderRadius: '12px', border: '1px solid #e4e4e7',
+                                backgroundColor: 'white', fontWeight: 600, color: '#18181b',
+                                display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer'
+                            }}
+                        >
+                            <Download size={18} /> Export
+                        </button>
+                    </div>
+                </div>
 
-                <button
-                    className={`btn report-nav-btn ${view === 'weekly' ? 'btn-primary' : ''}`}
-                    onClick={() => toggleView('weekly')}
-                    style={{
-                        flex: 1,
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        padding: '12px',
-                        backgroundColor: view !== 'weekly' ? 'var(--color-bg-surface)' : undefined,
-                        color: view !== 'weekly' ? 'var(--color-text-main)' : undefined,
-                        border: view !== 'weekly' ? '1px solid var(--color-border)' : undefined,
-                        borderRadius: '16px'
-                    }}
-                >
-                    Week 🍩
-                </button>
+                {/* Tabs */}
+                <div style={{ display: 'flex', marginBottom: '4px', borderBottom: isDark ? '2px solid rgba(255,255,255,0.05)' : '2px solid #f4f4f5' }}>
+                    <div
+                        onClick={() => { triggerHaptic('light'); setViewType('transactions'); }}
+                        style={{
+                            padding: '12px 24px', cursor: 'pointer', fontWeight: 700,
+                            color: viewType === 'transactions' ? '#166534' : (isDark ? '#a1a1aa' : '#a1a1aa'), // Keep active green, faint inactive
+                            borderBottom: viewType === 'transactions' ? '2px solid #166534' : '2px solid transparent', marginBottom: '-2px'
+                        }}
+                    >
+                        Transactions
+                    </div>
+                    <div
+                        onClick={() => { triggerHaptic('light'); setViewType('items'); }}
+                        style={{
+                            padding: '12px 24px', cursor: 'pointer', fontWeight: 700,
+                            color: viewType === 'items' ? '#166534' : (isDark ? '#a1a1aa' : '#a1a1aa'),
+                            borderBottom: viewType === 'items' ? '2px solid #166534' : '2px solid transparent', marginBottom: '-2px'
+                        }}
+                    >
+                        Item Sales
+                    </div>
+                </div>
 
-                <button
-                    className={`btn report-nav-btn ${view === 'monthly' ? 'btn-primary' : ''}`}
-                    onClick={() => toggleView('monthly')}
-                    style={{
-                        flex: 1,
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        padding: '12px',
-                        backgroundColor: view !== 'monthly' ? 'var(--color-bg-surface)' : undefined,
-                        color: view !== 'monthly' ? 'var(--color-text-main)' : undefined,
-                        border: view !== 'monthly' ? '1px solid var(--color-border)' : undefined,
-                        borderRadius: '16px'
-                    }}
-                >
-                    Month 🥐
-                </button>
+                {/* Stats Row */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '16px 0', borderBottom: isDark ? '1px solid #27272a' : '1px solid #f4f4f5', marginBottom: '0' // [COMPACT] Reduced padding
+                }}>
+                    {[
+                        { label: 'Total Sales 🧁', value: reportData.reduce((acc, curr) => acc + ((curr.type === 'sale' || curr.type === 'order' || curr.type === 'settlement') ? curr.amount : 0), 0), color: '#166534' },
+                        { label: 'Total Expense 💸', value: reportData.reduce((acc, curr) => acc + (curr.type === 'expense' ? curr.amount : 0), 0), color: '#ef4444' },
+                        {
+                            label: 'Net Profit 💼', value: reportData.reduce((acc, curr) => {
+                                if (curr.type === 'sale' || curr.type === 'order' || curr.type === 'settlement') return acc + curr.amount;
+                                if (curr.type === 'expense') return acc - curr.amount;
+                                return acc;
+                            }, 0), color: isDark ? 'white' : '#18181b'
+                        }
+                    ].map((stat, i) => (
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#a1a1aa' }}>{stat.label}</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: stat.color }}>₹{stat.value.toFixed(2)}</div>
+                        </div>
+                    ))}
+                </div>
 
-                <button
-                    onClick={() => toggleView('daily')}
-                    className={`btn report-nav-btn ${showCalendar || (view === 'daily' && !isSameDay(selectedDate, new Date())) ? 'btn-primary' : ''}`}
-                    style={{
-                        padding: '12px',
-                        backgroundColor: (showCalendar || (view === 'daily' && !isSameDay(selectedDate, new Date()))) ? 'var(--color-primary)' : 'var(--color-bg-surface)',
-                        color: (showCalendar || (view === 'daily' && !isSameDay(selectedDate, new Date()))) ? 'white' : 'var(--color-text-main)',
-                        border: (showCalendar || (view === 'daily' && !isSameDay(selectedDate, new Date()))) ? 'none' : '1px solid var(--color-border)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '16px'
-                    }}
-                    title="Select Date"
-                >
-                    <CalendarIcon size={20} />
-                </button>
+                {/* Table Section */}
+                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    {loading && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                            <div className="spinner"></div>
+                        </div>
+                    )}
+
+                    {!loading && reportData.length === 0 && (
+                        <EmptyState isDark={isDark} />
+                    )}
+
+                    {!loading && reportData.length > 0 && viewType === 'transactions' && (
+                        <div style={{ flex: 1, overflowY: 'auto' }} className="hide-scrollbar">
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ position: 'sticky', top: 0, backgroundColor: isDark ? '#1E1B18' : 'white', zIndex: 10 }}> {/* [FIX] Sticky Header Chocolate */}
+                                    <tr style={{ borderBottom: isDark ? '1px solid #332b29' : '1px solid #f4f4f5' }}>
+                                        <th className="report-col-date" style={{ textAlign: 'left', padding: '12px 0', color: '#a1a1aa', fontSize: '0.75rem', fontWeight: 700 }}>DATE</th>
+                                        <th className="report-col-desc" style={{ textAlign: 'left', padding: '12px 0', color: '#a1a1aa', fontSize: '0.75rem', fontWeight: 700 }}>DESCRIPTION</th>
+                                        <th className="report-col-amt" style={{ textAlign: 'right', padding: '12px 0', color: '#a1a1aa', fontSize: '0.75rem', fontWeight: 700 }}>AMOUNT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {reportData.map(t => (
+                                        <tr key={t.id} style={{ borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #f4f4f5' }}>
+                                            <td style={{ padding: '16px 0' }}>
+                                                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: isDark ? '#fff7ed' : '#18181b' }}>{format(new Date(t.date), 'dd/MM')}</div> {/* [FIX] Smaller Date */}
+                                                <div className="report-date-text" style={{ fontSize: '0.75rem', color: isDark ? '#a1a1aa' : '#a1a1aa' }}>{format(new Date(t.date), 'hh:mm a')}</div>
+                                            </td>
+                                            <td style={{ textAlign: 'left', padding: '16px 0', color: isDark ? '#e4e4e7' : '#18181b', whiteSpace: 'normal', wordBreak: 'break-word', paddingRight: '8px' }}>
+                                                {t.description}
+                                            </td>
+                                            <td style={{ textAlign: 'right', padding: '16px 0', fontWeight: 700, color: (t.type === 'expense') ? '#ef4444' : '#166534' }}>
+                                                {(t.type === 'expense') ? '-' : '+'}₹{t.amount}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {!loading && reportData.length > 0 && viewType === 'items' && (
+                        <div style={{ flex: 1, overflowY: 'auto' }} className="hide-scrollbar">
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ position: 'sticky', top: 0, backgroundColor: isDark ? '#1E1B18' : 'white', zIndex: 10 }}> {/* [FIX] Sticky Chocolate */}
+                                    <tr style={{ borderBottom: isDark ? '1px solid #332b29' : '1px solid #f4f4f5' }}>
+                                        <th style={{ width: '55%', textAlign: 'left', padding: '12px 0', color: '#a1a1aa', fontSize: '0.75rem', fontWeight: 700 }}>ITEM</th>
+                                        <th style={{ width: '20%', textAlign: 'center', padding: '12px 0', color: '#a1a1aa', fontSize: '0.75rem', fontWeight: 700 }}>QTY</th>
+                                        <th style={{ width: '25%', textAlign: 'right', padding: '12px 0', color: '#a1a1aa', fontSize: '0.75rem', fontWeight: 700 }}>TOTAL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {itemSalesData.map((item, i) => (
+                                        <tr key={i} style={{ borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #f4f4f5' }}>
+                                            <td className="report-cell-desc" style={{ padding: '16px 0', textAlign: 'left', color: isDark ? 'white' : '#18181b', paddingRight: '8px' }}>
+                                                <div style={{ fontWeight: 700 }}>{item.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: isDark ? '#a1a1aa' : '#a1a1aa' }}>{item.category}</div>
+                                            </td>
+                                            <td style={{ textAlign: 'center', padding: '16px 0', color: isDark ? 'white' : '#18181b', fontWeight: 600 }}>
+                                                {item.qty}
+                                            </td>
+                                            <td style={{ textAlign: 'right', padding: '16px 0', fontWeight: 700, color: '#166534' }}>
+                                                ₹{item.total}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Export Modal */}
@@ -436,270 +657,7 @@ const Reports = ({ setCurrentView }) => {
                 isOpen={showExportModal}
                 onClose={() => setShowExportModal(false)}
             />
-
-            {/* Calendar Widget (Conditional) */}
-            {showCalendar && (
-                <div style={{ animation: 'fadeIn 0.2s ease-out', flexShrink: 0 }}>
-                    <Calendar
-                        onChange={handleDateChange}
-                        value={selectedDate}
-                        maxDate={new Date()}
-                        tileContent={({ date, view }) => view === 'month' && hasTransaction(date) ? <div className="tile-dot"></div> : null}
-                    />
-                </div>
-            )}
-
-
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0, gap: '8px', flexWrap: 'nowrap' }}>
-                <h3 className="reports-title">{getTitle()}</h3>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                        onClick={() => {
-                            triggerHaptic('light');
-                            setCurrentView('analytics');
-                        }}
-                        className="btn btn-premium-hover"
-                        style={{
-                            padding: '8px 12px',
-                            backgroundColor: 'var(--color-bg-surface)',
-                            color: 'var(--color-primary)',
-                            border: '1px solid var(--color-border)',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            borderRadius: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                        }}
-                    >
-                        <PieChartIcon size={18} /> Analytics
-                    </button>
-                    <button
-                        onClick={() => {
-                            triggerHaptic('light');
-                            setShowExportModal(true);
-                        }}
-                        className="btn btn-premium-hover"
-                        style={{
-                            padding: '8px 12px',
-                            backgroundColor: 'var(--color-bg-surface)',
-                            color: 'var(--color-text-main)',
-                            border: '1px solid var(--color-border)',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            borderRadius: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                        }}
-                    >
-                        <Download size={18} /> Export
-                    </button>
-                </div>
-            </div>
-
-            {/* View Type Toggle (Transactions / Items) */}
-            <div style={{ padding: '0 20px', marginBottom: '16px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                <div style={{
-                    display: 'flex',
-                    background: 'var(--color-bg-surface-transparent)',
-                    padding: '4px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--color-border)',
-                    width: '100%',
-                    maxWidth: '500px',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)'
-                }}>
-                    <button
-                        onClick={() => { triggerHaptic('light'); setViewType('transactions'); }}
-                        style={{
-                            flex: 1,
-                            padding: '10px',
-                            borderRadius: '8px',
-                            background: viewType === 'transactions' ? 'var(--color-primary)' : 'transparent',
-                            color: viewType === 'transactions' ? 'white' : 'var(--color-text-muted)',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            boxShadow: viewType === 'transactions' ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
-                        }}
-                    >
-                        Transactions
-                    </button>
-                    <button
-                        onClick={() => { triggerHaptic('light'); setViewType('items'); }}
-                        style={{
-                            flex: 1,
-                            padding: '10px',
-                            borderRadius: '8px',
-                            background: viewType === 'items' ? 'var(--color-primary)' : 'transparent',
-                            color: viewType === 'items' ? 'white' : 'var(--color-text-muted)',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            boxShadow: viewType === 'items' ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
-                        }}
-                    >
-                        Item Sales
-                    </button>
-                </div>
-            </div>
-
-            {/* Table Section (Flex 1) */}
-            {/* Table Section (Flex 1) */}
-            <div className="card" style={{ padding: 0, overflow: 'hidden', flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                {loading && (
-                    <div style={{
-                        position: 'absolute', inset: 0, backgroundColor: 'var(--color-bg-surface-transparent)',
-                        zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}>
-                        <div className="spinner"></div>
-                    </div>
-                )}
-                <div style={{ overflowY: 'auto', flex: 1 }}>
-                    {reportData.length > 0 ? (
-                        <>
-                            <div style={{ borderBottom: '1px solid var(--color-border)', position: 'sticky', top: 0, backgroundColor: 'var(--color-bg-surface)', zIndex: 10 }}>
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '100px 1fr 125px',
-                                    maxWidth: '600px',
-                                    margin: '0 auto',
-                                    padding: '24px 0'
-                                }}>
-                                    {[
-                                        {
-                                            label: 'Total Sales 🧁',
-                                            value: reportData.reduce((acc, curr) => acc + ((curr.type === 'sale' || curr.type === 'order' || curr.type === 'settlement') ? curr.amount : 0), 0),
-                                            color: 'var(--color-success)',
-                                            align: 'left',
-                                            padding: '0 16px'
-                                        },
-                                        {
-                                            label: 'Total Expense 💸',
-                                            value: reportData.reduce((acc, curr) => acc + (curr.type === 'expense' ? curr.amount : 0), 0),
-                                            color: 'var(--color-danger)',
-                                            align: 'center',
-                                            padding: '0 8px'
-                                        },
-                                        {
-                                            label: 'Net Profit 💼',
-                                            value: reportData.reduce((acc, curr) => {
-                                                if (curr.type === 'sale' || curr.type === 'order' || curr.type === 'settlement') return acc + curr.amount;
-                                                if (curr.type === 'expense') return acc - curr.amount;
-                                                return acc;
-                                            }, 0),
-                                            color: 'var(--color-text-main)',
-                                            align: 'right',
-                                            padding: '0 16px'
-                                        }
-                                    ].map((item, i) => (
-                                        <div key={i} style={{ textAlign: item.align, padding: item.padding, whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>{item.label}</div>
-                                            <div style={{ color: item.color, fontWeight: '700', fontSize: '1.1rem', letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>
-                                                ₹ {item.value.toFixed(2)}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {viewType === 'transactions' ? (
-                                <table style={{
-                                    width: '100%',
-                                    maxWidth: '600px',
-                                    margin: '0 auto',
-                                    borderCollapse: 'collapse',
-                                    fontSize: '0.9rem',
-                                    tableLayout: 'fixed'
-                                }}>
-                                    <thead style={{ position: 'sticky', top: '75px', backgroundColor: 'var(--color-bg-surface)', zIndex: 5, boxShadow: '0 1px 0 var(--color-border)' }}>
-                                        <tr style={{ textAlign: 'left' }}>
-                                            <th style={{ padding: '12px 16px', width: '100px', color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</th>
-                                            <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Description</th>
-                                            <th style={{ padding: '12px 16px', textAlign: 'right', width: '125px', color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {reportData.map(t => (
-                                            <tr key={t.id} style={{ borderBottom: '1px solid var(--color-bg-body)', transition: 'background-color 0.2s' }}>
-                                                <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                    <div style={{ fontWeight: '500', color: 'var(--color-text-main)' }}>{format(new Date(t.date), 'dd/MM')}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>{format(new Date(t.date), 'h:mm a')}</div>
-                                                </td>
-                                                <td style={{ padding: '12px 8px', verticalAlign: 'middle', textAlign: 'center', whiteSpace: 'normal', wordBreak: 'break-word', color: 'var(--color-text-main)' }}>
-                                                    {t.description}
-                                                    {t.status === 'pending' && <span style={{ display: 'inline-block', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(255, 193, 7, 0.2)', color: 'var(--color-warning)', marginLeft: '6px' }}>Pending</span>}
-                                                </td>
-                                                <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle', fontWeight: '600' }}>
-                                                    <div style={{ color: (t.type === 'sale' || t.type === 'order' || t.type === 'settlement') ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                                                        {(t.type === 'sale' || t.type === 'order' || t.type === 'settlement') ? '+' : '-'}₹{t.amount.toLocaleString()}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                /* ITEM SALES TABLE */
-                                <table style={{
-                                    width: '100%',
-                                    maxWidth: '600px',
-                                    margin: '0 auto',
-                                    borderCollapse: 'collapse',
-                                    fontSize: '0.9rem',
-                                    tableLayout: 'fixed'
-                                }}>
-                                    <thead style={{ position: 'sticky', top: '75px', backgroundColor: 'var(--color-bg-surface)', zIndex: 5, boxShadow: '0 1px 0 var(--color-border)' }}>
-                                        <tr style={{ textAlign: 'left' }}>
-                                            <th style={{ padding: '12px 16px', width: '60%', color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Item</th>
-                                            <th style={{ padding: '12px 8px', textAlign: 'center', width: '15%', color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Qty</th>
-                                            <th style={{ padding: '12px 16px', textAlign: 'right', width: '25%', color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {itemSalesData.length > 0 ? itemSalesData.map((item, index) => (
-                                            <tr key={index} style={{ borderBottom: '1px solid var(--color-bg-body)', transition: 'background-color 0.2s' }}>
-                                                <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                    <div style={{ fontWeight: '500', color: 'var(--color-text-main)' }}>{item.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>{item.category}</div>
-                                                </td>
-                                                <td style={{ padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '500', color: 'var(--color-text-main)' }}>
-                                                    {item.qty}
-                                                </td>
-                                                <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle', fontWeight: '600', color: 'var(--color-success)' }}>
-                                                    ₹{item.total.toLocaleString()}
-                                                </td>
-                                            </tr>
-                                        )) : (
-                                            <tr>
-                                                <td colSpan="3" style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>No item sales found for this period.</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            )}
-                        </>
-                    ) : (
-                        !loading && <EmptyState message="No transactions for this range." />
-                    )}
-                </div>
-            </div>
-        </div>
+        </div >
     );
 };
 

@@ -40,17 +40,19 @@ const MainLayout = () => {
   const location = useLocation();
 
   return (
-    <div style={{ paddingBottom: '80px', minHeight: '100vh', position: 'relative' }}>
-      <Suspense fallback={<SuspenseLoader />}>
-        <AnimatePresence mode="wait" initial={false}>
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-            <Route path="/billing" element={<PageTransition><Billing /></PageTransition>} />
-            <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
-            <Route path="/inventory" element={<PageTransition><Inventory /></PageTransition>} />
-          </Routes>
-        </AnimatePresence>
-      </Suspense>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+        <Suspense fallback={<SuspenseLoader />}>
+          <AnimatePresence mode="wait" initial={false}>
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+              <Route path="/billing" element={<PageTransition><Billing /></PageTransition>} />
+              <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
+              <Route path="/inventory" element={<PageTransition><Inventory /></PageTransition>} />
+            </Routes>
+          </AnimatePresence>
+        </Suspense>
+      </div>
       <BottomNav />
     </div>
   );

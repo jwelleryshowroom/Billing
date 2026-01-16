@@ -9,7 +9,7 @@ const Settings = ({ onClose }) => {
     const { dashboardMode, setDashboardMode } = useTheme();
     const { role: _role } = useAuth();
     const { deferredPrompt, promptInstall, isIOS, isStandalone } = useInstall();
-    const { menuBarMode, setMenuBarMode, iconStyle, setIconStyle, showMenuLabels, setShowMenuLabels } = useSettings();
+    const { menuBarMode, setMenuBarMode, iconStyle, setIconStyle, showMenuLabels, setShowMenuLabels, homeLayoutMode, setHomeLayoutMode } = useSettings();
 
     return (
         <div style={{ padding: '0 4px', height: '100%', overflowY: 'auto' }}>
@@ -70,6 +70,52 @@ const Settings = ({ onClose }) => {
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, marginBottom: '16px', color: 'var(--color-text-main)' }}>
+                        Desktop Home Layout
+                    </label>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid var(--color-border)' }}>
+                        {/* Bento Mode */}
+                        <div
+                            onClick={() => setHomeLayoutMode('bento')}
+                            style={{
+                                cursor: 'pointer',
+                                border: `2px solid ${homeLayoutMode === 'bento' ? 'var(--color-primary)' : 'transparent'}`,
+                                borderRadius: '16px',
+                                padding: '12px',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '6px', textAlign: 'center', color: homeLayoutMode === 'bento' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                                🍱 Bento Grid
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                                Full-screen command center.
+                            </div>
+                        </div>
+
+                        {/* Simple Mode */}
+                        <div
+                            onClick={() => setHomeLayoutMode('simple')}
+                            style={{
+                                cursor: 'pointer',
+                                border: `2px solid ${homeLayoutMode === 'simple' ? 'var(--color-primary)' : 'transparent'}`,
+                                borderRadius: '16px',
+                                padding: '12px',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '6px', textAlign: 'center', color: homeLayoutMode === 'simple' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                                📱 Classic
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+                                Mobile layout centered.
+                            </div>
+                        </div>
+                    </div>
+
                     <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, marginBottom: '16px', color: 'var(--color-text-main)' }}>
                         Dashboard View Mode
                     </label>

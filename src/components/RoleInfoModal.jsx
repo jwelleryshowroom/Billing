@@ -20,8 +20,8 @@ const RoleInfoModal = ({ isOpen, onClose }) => {
                         <Shield size={24} />
                     </div>
                     <div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>Munna Bhai 🕶️</h4>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.4, fontStyle: 'italic' }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: '#78350f', fontWeight: 800 }}>Munna Bhai 🕶️</h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e', lineHeight: 1.4, fontStyle: 'italic', fontWeight: 500 }}>
                             "Asli Boss. Hisab-kitab, tod-phod (delete), sab yahi karega."
                         </p>
                     </div>
@@ -39,8 +39,8 @@ const RoleInfoModal = ({ isOpen, onClose }) => {
                         <User size={24} />
                     </div>
                     <div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>Circuit 🔌</h4>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.4, fontStyle: 'italic' }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: '#064e3b', fontWeight: 800 }}>Circuit 🔌</h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#065f46', lineHeight: 1.4, fontStyle: 'italic', fontWeight: 500 }}>
                             "Bhai ka right hand. Entry karega, par mitane (delete) ka haq nahi."
                         </p>
                     </div>
@@ -58,8 +58,8 @@ const RoleInfoModal = ({ isOpen, onClose }) => {
                         <Lock size={24} />
                     </div>
                     <div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>Mamu 🤕</h4>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.4, fontStyle: 'italic' }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: '#7f1d1d', fontWeight: 800 }}>Mamu 🤕</h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#991b1b', lineHeight: 1.4, fontStyle: 'italic', fontWeight: 500 }}>
                             "Sirf dekhne ka. Haath nahi lagane ka."
                         </p>
                     </div>

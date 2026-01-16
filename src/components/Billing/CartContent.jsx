@@ -1,15 +1,17 @@
 import React from 'react';
 import {
     Plus, Minus, ShoppingCart, User, Calendar, Clock, Phone, Trash2, Award,
-    NotebookPen, Save, Printer
+    NotebookPen, Save, Printer, ShoppingBag, Clipboard
 } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toTitleCase } from '../../utils/smartHelpers';
 
 // --- Extracted Cart Component to fix Focus Issues ---
 const CartContent = ({
     isMobile = false,
     mode,
+    setMode,
     cart,
     totalAmount,
     payment,
@@ -34,53 +36,46 @@ const CartContent = ({
 
             {/* SCENARIO B: ORDER DETAILS (Only if Order Mode) */}
             {mode === 'order' && (
-                <div style={{ padding: '16px', background: 'transparent', borderBottom: '1px solid var(--color-border)' }}>
-                    <div style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Order Details</div>
+                <div style={{ padding: '12px', background: 'transparent', borderBottom: '1px solid var(--color-border)' }}>
+                    {/* Header Row: Label + Toggle Inline */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>Order Details</div>
 
-                    {/* Handover Type Toggle */}
-                    <div style={{ display: 'flex', background: 'var(--color-bg-glass-tab)', padding: '4px', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
-                        <button
-                            onClick={() => {
-                                triggerHaptic('light');
-                                setHandoverMode('now');
-                            }}
-                            style={{
-                                flex: 1,
-                                padding: '8px',
-                                borderRadius: '6px',
-                                background: handoverMode === 'now' ? 'var(--color-bg-surface)' : 'transparent',
-                                color: handoverMode === 'now' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                boxShadow: handoverMode === 'now' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: handoverMode === 'now' ? 700 : 500,
-                                transition: 'all 0.2s ease'
-                            }}
-                        >
-                            Take Now
-                        </button>
-                        <button
-                            onClick={() => {
-                                triggerHaptic('light');
-                                setHandoverMode('later');
-                            }}
-                            style={{
-                                flex: 1,
-                                padding: '8px',
-                                borderRadius: '6px',
-                                background: handoverMode === 'later' ? 'var(--color-bg-surface)' : 'transparent',
-                                color: handoverMode === 'later' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                boxShadow: handoverMode === 'later' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: handoverMode === 'later' ? 700 : 500,
-                                transition: 'all 0.2s ease'
-                            }}
-                        >
-                            Book Later
-                        </button>
+                        {/* Compact Handover Type Toggle */}
+                        <div style={{ display: 'flex', background: 'var(--color-bg-glass-tab)', padding: '2px', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+                            <button
+                                onClick={() => {
+                                    triggerHaptic('light');
+                                    setHandoverMode('now');
+                                }}
+                                style={{
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    background: handoverMode === 'now' ? 'var(--color-bg-surface)' : 'transparent',
+                                    color: handoverMode === 'now' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                    boxShadow: handoverMode === 'now' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                                    border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: handoverMode === 'now' ? 700 : 500
+                                }}
+                            >
+                                Take Now
+                            </button>
+                            <button
+                                onClick={() => {
+                                    triggerHaptic('light');
+                                    setHandoverMode('later');
+                                }}
+                                style={{
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    background: handoverMode === 'later' ? 'var(--color-bg-surface)' : 'transparent',
+                                    color: handoverMode === 'later' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                    boxShadow: handoverMode === 'later' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                                    border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: handoverMode === 'later' ? 700 : 500
+                                }}
+                            >
+                                Book Later
+                            </button>
+                        </div>
                     </div>
 
                     {/* Customer Input */}
@@ -90,7 +85,7 @@ const CartContent = ({
                             <input
                                 placeholder="Name"
                                 value={customerDetails.name}
-                                onChange={e => setCustomerDetails(prev => ({ ...prev, name: e.target.value }))}
+                                onChange={e => setCustomerDetails(prev => ({ ...prev, name: toTitleCase(e.target.value) }))}
                                 style={{ width: '100%', padding: '10px 10px 10px 34px', background: 'var(--color-bg-glass-input)', border: '1px solid var(--color-border)', borderRadius: '6px', color: 'var(--color-text-primary)' }}
                             />
                         </div>
@@ -108,74 +103,73 @@ const CartContent = ({
                                 style={{ width: '100%', padding: '10px 10px 10px 34px', background: 'var(--color-bg-glass-input)', border: '1px solid var(--color-border)', borderRadius: '6px', color: 'var(--color-text-primary)' }}
                             />
                         </div>
-                    </div>
+                    </div >
 
                     {/* Returning Customer Badge */}
-                    {existingCustomer && (
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: '6px',
-                            background: 'rgba(255, 152, 0, 0.1)', color: 'var(--color-primary)',
-                            padding: '6px 10px', borderRadius: '6px', fontSize: '0.8rem',
-                            marginBottom: '10px', width: 'fit-content'
-                        }}>
-                            <Award size={14} />
-                            <span style={{ fontWeight: 600 }}>Returning Customer</span>
-                            <span style={{ opacity: 0.8 }}>• {existingCustomer.visitCount} Visits</span>
-                        </div>
-                    )}
+                    {
+                        existingCustomer && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                background: 'rgba(255, 152, 0, 0.1)', color: 'var(--color-primary)',
+                                padding: '6px 10px', borderRadius: '6px', fontSize: '0.8rem',
+                                marginBottom: '10px', width: 'fit-content'
+                            }}>
+                                <Award size={14} />
+                                <span style={{ fontWeight: 600 }}>Returning Customer</span>
+                                <span style={{ opacity: 0.8 }}>• {existingCustomer.visitCount} Visits</span>
+                            </div>
+                        )
+                    }
 
 
                     {/* Date Picker (Only if Handover IS Later) */}
-                    {handoverMode === 'later' && (
-                        <div style={{ marginTop: '8px', padding: '8px', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {/* Date Input */}
-                            <div style={{ flex: 1.5, display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-bg-glass-input)', padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
-                                <Calendar size={16} color="#FF9800" />
-                                <input
-                                    type="date"
-                                    value={deliveryDetails.date}
-                                    onChange={e => setDeliveryDetails(prev => ({ ...prev, date: e.target.value }))}
-                                    style={{ background: 'transparent', border: 'none', color: 'var(--color-text-primary)', colorScheme: 'var(--color-scheme)', width: '100%', fontFamily: 'inherit', fontSize: '0.9rem', outline: 'none' }}
-                                />
-                            </div>
+                    {
+                        handoverMode === 'later' && (
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {/* Date Input */}
+                                <div style={{ flex: 1.5, display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-bg-glass-input)', padding: '10px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                                    <Calendar size={16} color="#FF9800" />
+                                    <input
+                                        type="date"
+                                        value={deliveryDetails.date}
+                                        onChange={e => setDeliveryDetails(prev => ({ ...prev, date: e.target.value }))}
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--color-text-primary)', colorScheme: 'var(--color-scheme)', width: '100%', fontFamily: 'inherit', fontSize: '0.9rem', outline: 'none' }}
+                                    />
+                                </div>
 
-                            {/* Time Input */}
-                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-bg-glass-input)', padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
-                                <Clock size={16} color="#4CAF50" />
-                                <input
-                                    type="time"
-                                    value={deliveryDetails.time}
-                                    onChange={e => setDeliveryDetails(prev => ({ ...prev, time: e.target.value }))}
-                                    style={{ background: 'transparent', border: 'none', color: 'var(--color-text-primary)', colorScheme: 'var(--color-scheme)', width: '100%', fontFamily: 'inherit', fontSize: '0.9rem', outline: 'none' }}
-                                />
+                                {/* Time Input */}
+                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-bg-glass-input)', padding: '10px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                                    <Clock size={16} color="#4CAF50" />
+                                    <input
+                                        type="time"
+                                        value={deliveryDetails.time}
+                                        onChange={e => setDeliveryDetails(prev => ({ ...prev, time: e.target.value }))}
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--color-text-primary)', colorScheme: 'var(--color-scheme)', width: '100%', fontFamily: 'inherit', fontSize: '0.9rem', outline: 'none' }}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )
+                    }
+                </div >
             )
             }
 
             {/* CART ITEMS LIST */}
-            <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
+            <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '12px' }}>
                 {!isMobile && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <span style={{ fontWeight: 600, color: '#aaa' }}>CURRENT CART</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontSize: '0.8rem', color: '#666' }}>{cart.length} Items</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontWeight: 600, color: '#aaa', fontSize: '0.9rem' }}>CURRENT CART</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#666' }}>{cart.length} Items</span>
                             {cart.length > 0 && (
                                 <button
                                     onClick={() => {
                                         triggerHaptic('medium');
                                         clearCart();
                                     }}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '4px',
-                                        background: 'transparent', border: 'none',
-                                        color: '#ef5350', fontSize: '0.8rem', fontWeight: 600,
-                                        cursor: 'pointer'
-                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FF5252', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', background: 'rgba(255, 82, 82, 0.1)' }}
                                 >
-                                    <Trash2 size={14} /> Clear
+                                    <Trash2 size={12} /> Clear
                                 </button>
                             )}
                         </div>
@@ -183,42 +177,59 @@ const CartContent = ({
                 )}
 
                 {cart.length === 0 ? (
-                    <div style={{ textAlign: 'center', color: '#444', marginTop: '40px' }}>
-                        <ShoppingCart size={48} style={{ opacity: 0.2, marginBottom: '10px' }} />
-                        <div>Cart is empty</div>
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', opacity: 0.6 }}>
+                        <ShoppingCart size={40} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                        <div style={{ fontSize: '0.85rem' }}>Cart is empty</div>
                     </div>
                 ) : (
-                    <AnimatePresence initial={false} mode="popLayout">
-                        {cart.map(item => (
-                            <motion.div
-                                key={item.id}
-                                layout
-                                initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                exit={{ opacity: 0, x: 20, scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                                style={{ marginBottom: '16px', borderBottom: '1px solid var(--color-border)', paddingBottom: '16px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <div style={{ fontWeight: 500 }}>{item.name}</div>
-                                    <div style={{ fontWeight: 700 }}>₹{item.price * item.qty}</div>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ fontSize: '0.85rem', color: '#aaa' }}>₹{item.price} each</div>
-                                    {/* Qty Controls */}
-                                    <div style={{ display: 'flex', alignItems: 'center', background: 'var(--color-bg-glass-input)', borderRadius: '4px', border: '1px solid var(--color-border)' }}>
-                                        <button onClick={() => updateQty(item.id, -1)} style={{ padding: '4px 8px', background: 'transparent', border: 'none', color: 'var(--color-text-primary)', cursor: 'pointer' }}>-</button>
-                                        <span style={{ padding: '0 8px', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{item.qty}</span>
-                                        <button onClick={() => updateQty(item.id, 1)} style={{ padding: '4px 8px', background: 'transparent', border: 'none', color: 'var(--color-text-primary)', cursor: 'pointer' }}>+</button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {cart.map((item) => (
+                            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px dashed rgba(150,150,150,0.1)' }}>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 500, color: 'var(--color-text-primary)', fontSize: '0.95rem' }}>{item.name}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                        ₹{item.price} each {item.isVariant && <span style={{ background: 'var(--color-bg-secondary)', padding: '1px 4px', borderRadius: '4px', marginLeft: '4px', fontSize: '0.7rem' }}>{item.variantId}</span>}
                                     </div>
                                 </div>
-                            </motion.div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', background: 'var(--color-bg-secondary)', borderRadius: '6px', border: '1px solid var(--color-border)', padding: '2px' }}>
+                                        <button
+                                            onClick={() => updateQty(item.id, -1)}
+                                            style={{ padding: '2px 6px', color: 'var(--color-text-primary)' }}
+                                        >
+                                            <Minus size={12} />
+                                        </button>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 600, minWidth: '18px', textAlign: 'center', color: 'var(--color-text-primary)' }}>{item.qty}</span>
+                                        <button
+                                            onClick={() => updateQty(item.id, 1)}
+                                            style={{ padding: '2px 6px', color: 'var(--color-text-primary)' }}
+                                        >
+                                            <Plus size={12} />
+                                        </button>
+                                    </div>
+                                    <div style={{ fontWeight: 700, minWidth: '36px', textAlign: 'right', color: 'var(--color-text-primary)', fontSize: '0.9rem' }}>
+                                        ₹{item.price * item.qty}
+                                    </div>
+                                </div>
+                            </div>
                         ))}
-                    </AnimatePresence>
+                    </div>
                 )}
             </div>
 
             {/* FOOTER - COMPACT ON MOBILE */}
-            <div style={{ padding: isMobile ? '12px' : '20px', background: 'var(--color-bg-surface)', borderTop: '1px solid var(--color-border)', marginTop: 'auto' }}>
+            <div style={{
+                padding: isMobile ? '12px' : '20px',
+                background: 'var(--color-bg-surface)',
+                // Removed top border to reduce 'lines' visibility
+                // borderTop: '1px solid var(--color-border)',
+                // [POLISH] Floating Bubble Effect for Footer
+                margin: isMobile ? '0' : '16px',
+                borderRadius: isMobile ? '0' : '20px',
+                boxShadow: '0 -4px 24px rgba(0,0,0,0.06)', // Always shadow for "pop"
+                border: isMobile ? 'none' : '1px solid var(--color-border)'
+            }}>
                 {mode === 'order' && (
                     <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
                         <div style={{ position: 'relative' }}>
@@ -282,6 +293,8 @@ const CartContent = ({
                     </button>
                 </div>
             </div>
+
+            {/* Spacer logic removed to keep footer fixed at bottom */}
         </div >
     );
 };

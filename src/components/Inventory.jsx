@@ -10,6 +10,7 @@ import { InventoryCard } from '../features/inventory/components/InventoryCard';
 import AddEditProductModal from '../features/inventory/components/AddEditProductModal';
 import DeleteConfirmationModal from '../features/inventory/components/DeleteConfirmationModal';
 import BulkImportModal from '../features/inventory/components/BulkImportModal';
+import BulkEditModal from '../features/inventory/components/BulkEditModal'; // [NEW]
 
 // Hooks
 import { useInventoryFilters } from '../features/inventory/hooks/useInventoryFilters';
@@ -18,6 +19,7 @@ import { useInventoryActions } from '../features/inventory/hooks/useInventoryAct
 const Inventory = () => {
     const { items, loading } = useInventory();
     const { role } = useAuth(); // retained for any potential top-level role logic not in sub-components
+    const [isBulkEditOpen, setIsBulkEditOpen] = useState(false); // [NEW]
 
     // --- Responsive Check ---
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -98,26 +100,37 @@ const Inventory = () => {
     } = useInventoryActions();
 
     return (
-        <div style={{
+        <div className="no-scrollbar" style={{
             height: '100%',
-            overflowY: 'auto',
-            padding: isMobile ? '16px' : '24px',
-            paddingBottom: isMobile ? '80px' : '24px' // Space for mobile nav
+            overflow: 'hidden', // [CHANGED] Main container doesn't scroll
+            display: 'flex', // [NEW] Layout Split
+            flexDirection: 'column',
+            padding: isMobile ? '12px 16px' : '24px',
+            paddingBottom: '0' // Remove bottom padding from parent to allow edge-to-edge
         }}>
-            {/* Header & Filters */}
-            <InventoryFilters
-                isMobile={isMobile}
-                searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-                selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
-                categories={categories}
-                // View Mode Removed
-                sortBy={sortBy} setSortBy={setSortBy}
-                showSortMenu={showSortMenu} setShowSortMenu={setShowSortMenu}
-                onAddClick={handleAddClick}
-                onImportClick={() => setIsImportModalOpen(true)}
-            />
-            {/* Content Area */}
-            <div style={{ minHeight: '50vh' }}>
+            {/* Header & Filters - Fixed at Top */}
+            <div style={{ flexShrink: 0, paddingBottom: '16px' }}>
+                <InventoryFilters
+                    isMobile={isMobile}
+                    searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+                    selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
+                    categories={categories}
+                    // View Mode Removed
+                    sortBy={sortBy} setSortBy={setSortBy}
+                    showSortMenu={showSortMenu} setShowSortMenu={setShowSortMenu}
+                    onAddClick={handleAddClick}
+                    onImportClick={() => setIsImportModalOpen(true)}
+                    onBulkEditClick={() => setIsBulkEditOpen(true)}
+                />
+            </div>
+
+            {/* Content Area - Independent Scroll */}
+            <div className="no-scrollbar" style={{
+                flex: 1,
+                overflowY: 'auto',
+                minHeight: '0',
+                paddingBottom: isMobile ? '100px' : '24px' // Add padding here for scrolling clearance
+            }}>
                 {loading ? (
                     <div
                         style={{
@@ -249,6 +262,11 @@ const Inventory = () => {
             <BulkImportModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
+            />
+
+            <BulkEditModal
+                isOpen={isBulkEditOpen}
+                onClose={() => setIsBulkEditOpen(false)}
             />
 
             <DeleteConfirmationModal

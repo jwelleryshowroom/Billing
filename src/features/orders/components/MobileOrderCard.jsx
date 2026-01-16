@@ -4,8 +4,13 @@ import { CheckCircle, Clock, Printer } from 'lucide-react';
 import { triggerHaptic } from '../../../utils/haptics';
 import StatusBadge from './StatusBadge';
 
-const MobileOrderCard = ({ order, onPrint, onShare, onDeliver, onMarkReady }) => {
-    const [expanded, setExpanded] = useState(false);
+const MobileOrderCard = ({ order, onPrint, onShare, onDeliver, onMarkReady, isHighlighted }) => { // [NEW] isHighlighted
+    const [expanded, setExpanded] = useState(isHighlighted || false);
+
+    // Auto-expand if highlighted changes
+    React.useEffect(() => {
+        if (isHighlighted) setExpanded(true);
+    }, [isHighlighted]);
     const { id, customer, items, payment, status, date, delivery } = order;
 
     // Delivery Timer Logic
@@ -51,10 +56,11 @@ const MobileOrderCard = ({ order, onPrint, onShare, onDeliver, onMarkReady }) =>
             borderRadius: '16px',
             marginBottom: '12px',
             padding: '16px',
-            border: `1px solid ${expanded ? 'var(--color-primary)' : 'var(--color-border)'}`,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer'
+            border: `1px solid ${expanded || isHighlighted ? 'var(--color-primary)' : 'var(--color-border)'}`,
+            boxShadow: isHighlighted ? '0 0 0 2px rgba(22, 163, 74, 0.2), 0 4px 12px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.05)', // [NEW] Highlight glow
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+            transform: isHighlighted ? 'scale(1.02)' : 'scale(1)' // [NEW] Slight pop
         }}>
             {/* Header: ID + Status + Time */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>

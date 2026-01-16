@@ -26,14 +26,16 @@ export const ToastProvider = ({ children }) => {
         setTimeout(() => {
             setToasts(prev => prev.filter(t => t.id !== id));
         }, 4000);
+
+        return id; // [NEW] Return ID for manual dismissal
     }, []);
 
-    const removeToast = (id) => {
+    const removeToast = useCallback((id) => {
         setToasts(prev => prev.filter(t => t.id !== id));
-    };
+    }, []);
 
     return (
-        <ToastContext.Provider value={{ showToast }}>
+        <ToastContext.Provider value={{ showToast, removeToast }}>
             {children}
             <div className="toast-container">
                 {toasts.map(toast => (

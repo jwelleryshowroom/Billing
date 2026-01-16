@@ -311,28 +311,34 @@ const Dashboard = () => {
                                         alignItems: 'center'
                                     }}
                                 >
-                                    <div>
-                                        <div style={{ fontWeight: '500' }}>{t.description}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                                            {format(new Date(t.date), 'h:mm a')}
+                                    <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
+                                        <div style={{ fontWeight: '500', fontSize: '0.95rem', lineHeight: '1.4' }}>
+                                            {t.description}
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{
-                                            fontWeight: '600',
-                                            color: (t.type === 'sale' || t.type === 'order' || t.type === 'settlement') ? 'var(--color-success)' : 'var(--color-danger)'
-                                        }}>
-                                            {(t.type === 'sale' || t.type === 'order' || t.type === 'settlement') ? '+' : '-'}₹{Number(t.amount)}
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{
+                                                fontWeight: '600',
+                                                fontSize: '0.9rem',
+                                                whiteSpace: 'nowrap',
+                                                color: (t.type === 'sale' || t.type === 'order' || t.type === 'settlement') ? 'var(--color-success)' : 'var(--color-danger)'
+                                            }}>
+                                                {(t.type === 'sale' || t.type === 'order' || t.type === 'settlement') ? '+' : '-'}₹{Number(t.amount)}
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteClick(t.id)}
+                                                style={{ color: 'var(--color-text-muted)', opacity: 0.6, background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                                                onMouseLeave={(e) => e.currentTarget.style.opacity = 0.6}
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => handleDeleteClick(t.id)}
-                                            style={{ color: 'var(--color-text-muted)', opacity: 0.6, background: 'none', border: 'none', cursor: 'pointer' }}
-                                            onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
-                                            onMouseLeave={(e) => e.currentTarget.style.opacity = 0.6}
-                                            title="Delete"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                            {format(new Date(t.date), 'h:mm a')}
+                                        </div>
                                     </div>
                                 </div>
                             ))}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, UtensilsCrossed, Plus, Minus, X } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
+import { getSmartEmoji } from '../../utils/smartHelpers';
 import VariantSelectionModal from './VariantSelectionModal';
 
 const ProductGrid = ({
@@ -61,7 +62,8 @@ const ProductGrid = ({
             category: selectedVariantItem.category,
             image: selectedVariantItem.image,
             isVariant: true,
-            variantId: variant.id
+            variantId: variant.id,
+            emoji: selectedVariantItem.emoji || selectedVariantItem.imageEmoji || getSmartEmoji(selectedVariantItem.name)
         };
 
         addToCart(variantCartItem);
@@ -69,7 +71,7 @@ const ProductGrid = ({
     };
 
     return (
-        <div className="menu-pane" style={{ borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', background: 'transparent', position: 'relative' }}>
+        <div className="menu-pane" style={{ flex: 1, minHeight: 0, height: '100%', borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', background: 'transparent', position: 'relative' }}>
             {/* Variant Selection Modal */}
             <VariantSelectionModal
                 isOpen={!!selectedVariantItem}
@@ -80,18 +82,8 @@ const ProductGrid = ({
             />
 
             {/* Search & Filter Bar */}
-            <div className="filter-bar" style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', gap: '12px', background: 'var(--color-bg-surface-transparent)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
-                <div className="search-container-desktop" style={{ flex: 1, position: 'relative' }}>
-                    <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
-                    <input
-                        className="search-input"
-                        type="text"
-                        placeholder="Search Item..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ width: '100%', padding: '12px 12px 12px 40px', background: 'var(--color-bg-secondary)', border: 'none', borderRadius: '8px', color: 'var(--color-text-primary)' }}
-                    />
-                </div>
+            <div className="filter-bar" style={{ padding: '12px 16px', display: 'flex', gap: '12px', background: 'transparent', zIndex: 10 }}>
+                {/* REMOVED DESKTOP SEARCH (Moved to Header) */}
                 <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingRight: '4px' }} className="no-scrollbar">
                     {categories.map(cat => (
                         <button
@@ -120,7 +112,7 @@ const ProductGrid = ({
             </div>
 
             {/* Grid */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: '100px' }}>
+            <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
                 <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px' }}>
                     {filteredItems.map(item => {
                         const cartItem = cart.find(c => c.id === item.id);
@@ -467,6 +459,9 @@ const ProductGrid = ({
                             )}
                         </div>
                     )}
+
+                    {/* Scroll Spacer */}
+                    <div style={{ gridColumn: '1 / -1', height: '180px' }} />
                 </div>
             </div>
         </div>

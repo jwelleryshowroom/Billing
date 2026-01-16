@@ -5,7 +5,7 @@ import { useInstall } from '../context/useInstall';
 import { triggerHaptic } from '../utils/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const Modal = ({ isOpen, onClose, title, children, zIndex = 10000 }) => {
+const Modal = ({ isOpen, onClose, title, children, zIndex = 20002 }) => {
     const { isStandalone } = useInstall();
 
     // Prevent scrolling when open
@@ -120,7 +120,7 @@ const Modal = ({ isOpen, onClose, title, children, zIndex = 10000 }) => {
                         </div>
 
                         {/* Body - SCROLLABLE */}
-                        <div style={{
+                        <div className="no-scrollbar" style={{
                             padding: '10px 20px',
                             overflowY: 'auto',
                             overscrollBehavior: 'contain',
