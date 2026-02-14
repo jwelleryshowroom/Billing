@@ -90,6 +90,21 @@ const PublicInvoice = () => {
     const bizFooter = businessProfile?.footer || 'Thank you for visiting!';
     const bizMapLink = businessProfile?.mapLink || 'https://maps.app.goo.gl/83qhC3mrtegUR7XM6'; // Default fallback
 
+    const isBooking = transaction?.type === 'ORDER_BOOKING';
+
+    if (loading) return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            <Loader2 className="animate-spin" size={32} />
+        </div>
+    );
+
+    if (error) return (
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '1rem' }}>
+            <AlertCircle size={48} color="red" />
+            <p>{error}</p>
+        </div>
+    );
+
     return (
         <div className="invoice-container">
             {/* Styles... */}

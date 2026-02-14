@@ -23,11 +23,10 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/authorized_users/$(email));
     }
 
+
     // Is the user a member of this business?
     function isMember(bizId) {
       return isAuthenticated() && (
-        isSuperAdmin() || 
-        (hasAuth(request.auth.token.email.lower()) && getAuth(request.auth.token.email.lower()).businessId == bizId)
       );
     }
 
