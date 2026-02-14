@@ -172,6 +172,11 @@ const PublicInvoice = () => {
                 </div>
 
                 <div style={{ borderTop: '1px dashed #e5e7eb', marginTop: '1.5rem', paddingTop: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', fontSize: '0.75rem', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <span>Payment Method</span>
+                        <span>{String(transaction.payment?.method || transaction.payment?.type || 'Cash').toUpperCase()}</span>
+                    </div>
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '900', color: '#111827' }}>
                         <span>Total Amount</span>
                         <span>₹{Number(transaction.totalValue || transaction.amount || 0).toFixed(2)}</span>
@@ -234,7 +239,7 @@ const PublicInvoice = () => {
             </div>
 
             <div style={{ position: 'fixed', bottom: '2px', right: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>
-                v2.6.0
+                v2.7.0
             </div>
         </div>
     );
