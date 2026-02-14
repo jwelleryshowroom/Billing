@@ -5,7 +5,7 @@ import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/useAuth';
 
 // Components
-import InventoryFilters from '../features/inventory/components/InventoryFilters';
+import InventoryFilters from '../features/inventory/components/InventoryFilters.jsx';
 import { InventoryCard } from '../features/inventory/components/InventoryCard';
 import AddEditProductModal from '../features/inventory/components/AddEditProductModal';
 import DeleteConfirmationModal from '../features/inventory/components/DeleteConfirmationModal';
