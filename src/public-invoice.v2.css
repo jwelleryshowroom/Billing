@@ -9,10 +9,13 @@
     align-items: center;
     padding: 1rem;
     padding-top: 2rem;
-    padding-bottom: 9rem;
-    /* Extra space for footer and scrolling */
+    padding-bottom: 2rem;
+    /* Use 100dvh for mobile viewport reliability */
+    height: 100dvh;
     overflow-y: auto;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scroll on iOS */
     font-family: 'Outfit', sans-serif;
     color: #fff;
 }

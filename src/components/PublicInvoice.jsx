@@ -107,13 +107,22 @@ const PublicInvoice = () => {
             </div>
 
             <div className="receipt-card">
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.4rem', color: '#111827', letterSpacing: '-0.02em' }}>{bizName}</h1>
-                    <div style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: '1.5', maxWidth: '90%', margin: '0 auto', whiteSpace: 'pre-wrap' }}>
-                        {bizAddress}
+                    <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        lineHeight: '1.3',
+                        maxWidth: '280px',
+                        margin: '0 auto',
+                        textAlign: 'center',
+                        textWrap: 'balance',
+                        display: 'block'
+                    }}>
+                        {bizAddress.replace(/\n+/g, ' ')}
                     </div>
                     {bizPhone && (
-                        <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#374151', marginTop: '6px' }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#374151', marginTop: '8px' }}>
                             {bizPhone}
                         </div>
                     )}
@@ -220,7 +229,7 @@ const PublicInvoice = () => {
             </div>
 
             <div style={{ position: 'fixed', bottom: '2px', right: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>
-                v2.4.0
+                v2.5.0
             </div>
         </div>
     );
