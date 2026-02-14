@@ -50,10 +50,9 @@ const PublicInvoice = () => {
                     }
                 }
 
-                // 3. Fallback: Search all transactions
+                // 3. Fallback: Search all transactions (Collection Group lookup)
                 if (!data) {
-                    // Try searching by the custom 'id' field if it's not the doc ID
-                    const q = query(collectionGroup(db, 'transactions'), where('orderId', '==', orderId));
+                    const q = query(collectionGroup(db, 'transactions'), where('id', '==', orderId));
                     const snap = await getDocs(q);
                     if (!snap.empty) {
                         data = { id: snap.docs[0].id, ...snap.docs[0].data() };
@@ -199,7 +198,7 @@ const PublicInvoice = () => {
             </div>
 
             <div style={{ position: 'fixed', bottom: '2px', right: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>
-                v2.1.0
+                v2.2.0
             </div>
         </div>
     );

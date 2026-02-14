@@ -132,7 +132,7 @@ service cloud.firestore {
     }
     // 8. Collection Group: Transactions (Public access to individual shared invoices)
     match /{path=**}/transactions/{tId} {
-      allow get: if true;
+      allow read: if true;
     }
   }
 }

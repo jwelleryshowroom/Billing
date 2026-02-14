@@ -19,4 +19,4 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
       - run: npm install -g firebase-tools
-      - run: firebase deploy --token "${{ secrets.FIREBASE_TOKEN }}" --only hosting --project lekhaakosh
+      - run: firebase deploy --token "${{ secrets.FIREBASE_TOKEN }}" --only hosting,firestore:rules --project lekhaakosh
