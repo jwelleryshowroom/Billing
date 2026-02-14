@@ -66,7 +66,9 @@ service cloud.firestore {
 
     // 2. Businesses & Nested Subcollections
     match /businesses/{bizId} {
-      allow read: if isMember(bizId);
+      // 🟢 PUBLIC: Anyone can see business profile for sharing invoices
+      allow get: if true;
+      allow list: if isMember(bizId);
       allow write: if isSuperAdmin() || isBizAdmin(bizId);
       
       // Nested Transactions
