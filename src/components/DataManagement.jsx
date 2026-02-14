@@ -1,15 +1,52 @@
 import React, { useState, useMemo } from 'react';
 import { useTransactions } from '../context/useTransactions';
 import { useAuth } from '../context/useAuth';
+import { useInventory } from '../context/InventoryContext';
+import { useCustomers } from '../context/CustomerContext';
+import { useToast } from '../context/useToast';
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getISOWeek, getYear } from 'date-fns';
-import { Trash2, AlertTriangle, Calendar, ChevronRight, ChevronDown, CheckCircle2, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { Trash2, AlertTriangle, Calendar, ChevronRight, ChevronDown, CheckCircle2, ShieldAlert, ArrowLeft, Database, Sparkles } from 'lucide-react';
+import { migrateBusinessData } from '../utils/migration';
 
 const DataManagement = ({ onClose }) => {
     const { transactions, deleteTransactionsByDateRange, clearAllTransactions } = useTransactions();
-    const { role } = useAuth();
+    const { clearAllInventory } = useInventory();
+    const { clearAllCustomers } = useCustomers();
+    const { showToast } = useToast();
+    const { role, businessId, isSuperAdmin } = useAuth();
     const [confirmModal, setConfirmModal] = useState({ show: false, range: null, title: '', message: '' });
     const [loading, setLoading] = useState(false);
+    const [migrationStatus, setMigrationStatus] = useState(null); // 'loading', 'done', 'error'
     const [viewMode, setViewMode] = useState('day'); // 'day', 'week', 'month'
+
+    const handleFactoryReset = async () => {
+        setLoading(true);
+        try {
+            await clearAllTransactions();
+            await clearAllInventory();
+            await clearAllCustomers();
+            showToast("FRESH START: All data for this business has been cleaned! 🧼", "success");
+            setConfirmModal({ show: false, range: null, title: '', message: '' });
+        } catch (error) {
+            console.error(error);
+            showToast("Factory reset failed partially.", "error");
+        }
+        setLoading(false);
+    };
+
+    const handleMigrate = async () => {
+        if (!businessId) return;
+        setMigrationStatus('loading');
+        try {
+            await migrateBusinessData(businessId);
+            setMigrationStatus('done');
+            showToast("Data successfully upgraded to professional structure! 🚀", "success");
+        } catch (error) {
+            console.error(error);
+            setMigrationStatus('error');
+            showToast("Upgrade failed. Check console or try again.", "error");
+        }
+    };
 
     // Group transactions dynamically based on viewMode
     const groups = useMemo(() => {
@@ -82,19 +119,20 @@ const DataManagement = ({ onClose }) => {
     };
 
     const confirmDelete = async () => {
+        if (confirmModal.range === 'all') {
+            await handleFactoryReset();
+            return;
+        }
+
         setLoading(true);
         try {
-            if (confirmModal.range === 'all') {
-                await clearAllTransactions();
-            } else {
-                await deleteTransactionsByDateRange(
-                    confirmModal.range.start.toISOString(),
-                    confirmModal.range.end.toISOString()
-                );
-            }
+            await deleteTransactionsByDateRange(
+                confirmModal.range.start.toISOString(),
+                confirmModal.range.end.toISOString()
+            );
             setConfirmModal({ show: false, range: null, title: '', message: '' });
         } catch {
-            alert("Error deleting data.");
+            showToast("Error deleting data.", "error");
         }
         setLoading(false);
     };
@@ -163,6 +201,50 @@ const DataManagement = ({ onClose }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Data Structure Upgrade (Migration) */}
+            {role === 'admin' && (
+                <div className="card" style={{
+                    marginBottom: '16px',
+                    padding: '20px',
+                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                    border: '1px solid rgba(99, 102, 241, 0.2)',
+                    borderRadius: '24px'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                        <div style={{ padding: '10px', background: 'var(--color-primary)', borderRadius: '12px', color: 'white' }}>
+                            <Sparkles size={20} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Upgrade Search Engine</h3>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: 0 }}>Sync data with the new professional structure.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleMigrate}
+                        disabled={migrationStatus === 'loading'}
+                        style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '12px',
+                            backgroundColor: migrationStatus === 'done' ? 'var(--color-success)' : 'var(--color-primary)',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                            opacity: migrationStatus === 'loading' ? 0.7 : 1
+                        }}
+                    >
+                        {migrationStatus === 'loading' ? 'Upgrading...' : migrationStatus === 'done' ? <><CheckCircle2 size={18} /> Upgrade Finished</> : <><Database size={18} /> Run Sync Tool</>}
+                    </button>
+                    {migrationStatus !== 'done' && (
+                        <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '8px', textAlign: 'center', fontStyle: 'italic' }}>
+                            Recommended after first-time brand update.
+                        </p>
+                    )}
+                </div>
+            )}
 
             {/* Toggle Switch */}
             <div style={{ display: 'flex', marginBottom: '16px', backgroundColor: 'var(--color-bg-surface)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>

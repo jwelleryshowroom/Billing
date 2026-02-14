@@ -23,8 +23,8 @@ const BottomNav = () => {
     }, []);
 
     // Config
-    const baseSize = 48;
-    const dockHeight = 64;
+    const baseSize = isMobile ? 40 : 48;
+    const dockHeight = isMobile ? 56 : 64;
     const distanceLimit = 240;
     const scaleFactor = isMobile ? 1.5 : 2.4; // Slightly increased for mobile visibility
     const smoothing = isMobile ? 0.4 : 0.35; // Significantly higher for macOS-like snappiness
@@ -48,12 +48,12 @@ const BottomNav = () => {
         light: {
             background: 'rgba(255, 255, 255, 0.4)',
             border: '1px solid rgba(255, 255, 255, 0.5)',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), inset 0 0 0 0.5px rgba(255,255,255,0.4)',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), inset 0 0 0 0.5px rgba(255,255,255,0.4)',
         },
         dark: {
             background: 'rgba(30, 30, 30, 0.5)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255,255,255,0.1)',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255,255,255,0.1)',
         }
     };
     const currentTheme = dockStyle[theme] || dockStyle.light;
@@ -308,7 +308,7 @@ const BottomNav = () => {
                     zIndex: 10002,
                     transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-                    paddingBottom: '20px',
+                    paddingBottom: '12px',
                     height: 'auto', pointerEvents: isHidden ? 'none' : 'auto'
                 }}
             >

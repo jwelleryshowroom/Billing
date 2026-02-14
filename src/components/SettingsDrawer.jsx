@@ -4,30 +4,34 @@ import { useAuth } from '../context/useAuth';
 import { useInstall } from '../context/useInstall';
 import { useSettings } from '../context/SettingsContext';
 import RoleInfoModal from './RoleInfoModal';
-import { Settings as SettingsIcon, Layout, Trophy, Smartphone, MousePointer2, Eye, Smile, X, Monitor, Info, Database, Check } from 'lucide-react';
+import { Settings as SettingsIcon, X, Info, Database, Smartphone, Users, Store, Sliders, ChevronRight, ChevronLeft } from 'lucide-react';
+import StaffManagement from './StaffManagement';
 import { triggerHaptic } from '../utils/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Sub-pages
+import BusinessSettings from './settings/BusinessSettings';
+import GeneralSettings from './settings/GeneralSettings';
+
 const SettingsDrawer = () => {
-    const { dashboardMode, setDashboardMode, theme } = useTheme(); // [MODIFIED] Get theme
-    const isDark = theme === 'dark'; // [NEW] Derive isDark
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     const { role: _role } = useAuth();
     const { deferredPrompt, promptInstall } = useInstall();
     const {
-        menuBarMode, setMenuBarMode,
-        iconStyle, setIconStyle,
-        showMenuLabels, setShowMenuLabels,
-        showMilestoneModal, setShowMilestoneModal,
         isSettingsOpen, closeSettings,
-        openData
+        openData,
+        businessName
     } = useSettings();
 
     const [showRoleInfo, setShowRoleInfo] = useState(false);
+    const [currentView, setCurrentView] = useState('menu'); // 'menu', 'business', 'team', 'general'
 
     // Prevent body scroll when open
     useEffect(() => {
         if (isSettingsOpen) {
             document.body.style.overflow = 'hidden';
+            setCurrentView('menu'); // Reset to menu on open
         } else {
             document.body.style.overflow = '';
         }
@@ -38,9 +42,18 @@ const SettingsDrawer = () => {
 
     if (!isSettingsOpen) return null;
 
-    // Helper for subtle borders and backgrounds based on theme
     const borderColor = 'var(--color-border)';
-    const glassBg = isDark ? 'rgba(9, 9, 11, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+    const menuItems = [
+        { id: 'business', label: 'Business Info', icon: <Store size={20} />, color: '#6366f1', desc: 'Profile, Logo & Branding' },
+        { id: 'team', label: 'Team Management', icon: <Users size={20} />, color: '#8b5cf6', desc: 'Manage Staff & Roles', adminOnly: true },
+        { id: 'general', label: 'General Preferences', icon: <Sliders size={20} />, color: '#ec4899', desc: 'Interface & Display' },
+        { id: 'data', label: 'Manage Database', icon: <Database size={20} />, color: '#ef4444', desc: 'Backup & Restore', action: openData, adminOnly: true },
+    ];
+
+    const handleBack = () => {
+        triggerHaptic('light');
+        setCurrentView('menu');
+    };
 
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 20002, display: 'flex', justifyContent: 'flex-end' }}>
@@ -68,12 +81,10 @@ const SettingsDrawer = () => {
                     width: '100%',
                     maxWidth: '450px',
                     height: '100%',
-                    // [MODIFIED] deep glass background
                     background: isDark ? 'rgba(9, 9, 11, 0.6)' : 'rgba(255, 255, 255, 0.65)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                     borderLeft: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.4)'}`,
-                    // [MODIFIED] Shadow on border as requested
                     boxShadow: isDark
                         ? '-5px 0 30px rgba(0,0,0,0.5), inset 1px 0 0 rgba(255,255,255,0.1)'
                         : '-5px 0 30px rgba(0,0,0,0.1), inset 1px 0 0 rgba(255,255,255,0.5)',
@@ -89,7 +100,7 @@ const SettingsDrawer = () => {
                     padding: '24px',
                     borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    background: 'transparent', // Let parent glass show through
+                    background: 'transparent',
                     zIndex: 20
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -123,362 +134,185 @@ const SettingsDrawer = () => {
                     </motion.button>
                 </div>
 
-                {/* Content - Scrollable */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '24px', paddingBottom: '100px' }} className="hide-scrollbar">
-
-                    {/* Premium Role Badge */}
-                    <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                            triggerHaptic('light');
-                            setShowRoleInfo(true);
-                        }}
-                        style={{
-                            marginBottom: '32px',
-                            padding: '24px',
-                            // [MODIFIED] Subtle/Elegant Tint based on Role
-                            background: _role === 'admin'
-                                ? (isDark ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, rgba(234, 179, 8, 0.03) 100%)' : 'linear-gradient(135deg, rgba(254, 240, 138, 0.3) 0%, rgba(254, 240, 138, 0.05) 100%)') // Subtle Gold
-                                : (_role === 'staff'
-                                    ? (isDark ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.03) 100%)' : 'linear-gradient(135deg, rgba(191, 219, 254, 0.3) 0%, rgba(191, 219, 254, 0.05) 100%)') // Subtle Blue
-                                    : (isDark ? 'linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(244, 63, 94, 0.03) 100%)' : 'linear-gradient(135deg, rgba(254, 205, 211, 0.3) 0%, rgba(254, 205, 211, 0.05) 100%)')), // Subtle Pink
-                            borderRadius: '24px',
-                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)'}`,
-                            position: 'relative',
-                            overflow: 'hidden',
-                            boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.05)',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        {/* Holographic Shine Effect - Subtle */}
-                        <div style={{
-                            position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
-                            background: 'linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.2) 45%, transparent 50%)',
-                            transform: 'rotate(25deg)', pointerEvents: 'none', opacity: 0.5
-                        }}></div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                            <div style={{
-                                padding: '6px 12px', borderRadius: '20px',
-                                background: _role === 'admin' ? 'rgba(234, 179, 8, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                                color: _role === 'admin' ? (isDark ? '#facc15' : '#b45309') : (isDark ? '#60a5fa' : '#1d4ed8'),
-                                fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.5px',
-                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
-                            }}>
-                                {_role === 'admin' ? 'ADMIN ACCESS' : 'STAFF MEMBER'}
-                            </div>
-                            <Info size={18} color="var(--color-text-muted)" />
-                        </div>
-
-                        <div>
-                            <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>Current Profile</div>
-                            <div style={{
-                                fontSize: '2rem',
-                                fontWeight: 800,
-                                background: isDark
-                                    ? 'linear-gradient(90deg, var(--color-text-main), var(--color-text-muted))'
-                                    : 'linear-gradient(90deg, var(--color-text-main), var(--color-text-muted))',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                letterSpacing: '-1px'
-                            }}>
-                                {_role === 'admin' ? 'Munna Bhai' : _role === 'staff' ? 'Circuit' : 'Mamu'}
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* Section Title */}
-                    {/* Section Title */}
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-main)', marginBottom: '16px', opacity: 0.8 }}>Interface</h3>
-
-                    {/* Dashboard View Mode */}
-                    <div style={{ marginBottom: '32px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            {[
-                                { id: 'inline', label: 'Inline Form', icon: <Layout size={20} />, text: 'Efficient & Fast' },
-                                { id: 'popup', label: 'Popup Modal', icon: <Monitor size={20} />, text: 'Focused View' }
-                            ].map((option) => (
+                {/* Content Area */}
+                <div style={{ flex: 1, overflowY: 'auto', position: 'relative' }} className="hide-scrollbar">
+                    <AnimatePresence mode="wait">
+                        {currentView === 'menu' && (
+                            <motion.div
+                                key="menu"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                style={{ padding: '24px', paddingBottom: '100px' }}
+                            >
+                                {/* Premium Role Badge */}
                                 <motion.div
-                                    key={option.id}
-                                    onClick={() => setDashboardMode(option.id)}
-                                    whileHover={{ scale: 1.02, y: -2 }}
+                                    whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
+                                    onClick={() => {
+                                        triggerHaptic('light');
+                                        setShowRoleInfo(true);
+                                    }}
                                     style={{
-                                        border: `2px solid ${dashboardMode === option.id
-                                            ? 'var(--color-primary)'
-                                            : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.4)')}`,
-                                        borderRadius: '20px',
-                                        padding: '16px',
-                                        cursor: 'pointer',
-                                        // [MODIFIED] Subtle Tint for Selection
-                                        background: dashboardMode === option.id
-                                            ? (isDark ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.08)') // Subtle Green Tint
-                                            : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.4)'),
-                                        backdropFilter: 'blur(12px)',
-                                        WebkitBackdropFilter: 'blur(12px)',
+                                        marginBottom: '32px',
+                                        padding: '24px',
+                                        background: _role === 'admin'
+                                            ? (isDark ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, rgba(234, 179, 8, 0.03) 100%)' : 'linear-gradient(135deg, rgba(254, 240, 138, 0.3) 0%, rgba(254, 240, 138, 0.05) 100%)')
+                                            : (_role === 'staff'
+                                                ? (isDark ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.03) 100%)' : 'linear-gradient(135deg, rgba(191, 219, 254, 0.3) 0%, rgba(191, 219, 254, 0.05) 100%)')
+                                                : (isDark ? 'linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(244, 63, 94, 0.03) 100%)' : 'linear-gradient(135deg, rgba(254, 205, 211, 0.3) 0%, rgba(254, 205, 211, 0.05) 100%)')),
+                                        borderRadius: '24px',
+                                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)'}`,
                                         position: 'relative',
                                         overflow: 'hidden',
-                                        boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.05)'
+                                        cursor: 'pointer'
                                     }}
                                 >
-                                    <div style={{ marginBottom: '12px', color: dashboardMode === option.id ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
-                                        {option.icon}
-                                    </div>
-                                    <div style={{ fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '4px' }}>{option.label}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{option.text}</div>
-
-                                    {/* Visual Indicator of Mode */}
+                                    {/* Holographic Shine */}
                                     <div style={{
-                                        marginTop: '12px', height: '40px', background: 'var(--color-bg-secondary)', borderRadius: '8px',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5,
-                                        border: `1px solid ${borderColor}`
-                                    }}>
-                                        {option.id === 'inline' ? (
-                                            <div style={{ width: '80%', height: '4px', background: 'var(--color-text-muted)', borderRadius: '2px' }} />
-                                        ) : (
-                                            <div style={{ width: '20px', height: '24px', background: 'var(--color-text-muted)', borderRadius: '4px', border: '1px solid currentColor' }} />
-                                        )}
+                                        position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
+                                        background: 'linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.2) 45%, transparent 50%)',
+                                        transform: 'rotate(25deg)', pointerEvents: 'none', opacity: 0.5
+                                    }}></div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                                        <div style={{
+                                            padding: '6px 12px', borderRadius: '20px',
+                                            background: _role === 'admin' ? 'rgba(234, 179, 8, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                                            color: _role === 'admin' ? (isDark ? '#facc15' : '#b45309') : (isDark ? '#60a5fa' : '#1d4ed8'),
+                                            fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.5px',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
+                                        }}>
+                                            {_role === 'admin' ? 'ADMIN ACCESS' : 'STAFF MEMBER'}
+                                        </div>
+                                        <Info size={18} color="var(--color-text-muted)" />
                                     </div>
 
-                                    {dashboardMode === option.id && (
+                                    <div>
+                                        <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>Current Profile</div>
                                         <div style={{
-                                            position: 'absolute', top: '12px', right: '12px',
-                                            background: 'var(--color-primary)', borderRadius: '50%',
-                                            width: '20px', height: '20px',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                                            fontSize: '2rem', fontWeight: 800,
+                                            background: 'linear-gradient(90deg, var(--color-text-main), var(--color-text-muted))',
+                                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                            letterSpacing: '-1px'
                                         }}>
-                                            <Check size={12} color="white" />
+                                            {_role === 'admin' ? 'Munna Bhai' : _role === 'staff' ? 'Circuit' : 'Mamu'}
                                         </div>
-                                    )}
+                                    </div>
                                 </motion.div>
-                            ))}
-                        </div>
-                    </div>
 
+                                {/* Menu List */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    {menuItems.map((item) => {
+                                        if (item.adminOnly && _role !== 'admin') return null;
+                                        return (
+                                            <motion.div
+                                                key={item.id}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                onClick={() => {
+                                                    triggerHaptic('light');
+                                                    if (item.action) {
+                                                        item.action();
+                                                        closeSettings();
+                                                    } else {
+                                                        setCurrentView(item.id);
+                                                    }
+                                                }}
+                                                style={{
+                                                    background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.4)',
+                                                    backdropFilter: 'blur(12px)',
+                                                    WebkitBackdropFilter: 'blur(12px)',
+                                                    borderRadius: '20px',
+                                                    padding: '16px',
+                                                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.4)'}`,
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                                    <div style={{
+                                                        padding: '12px', borderRadius: '14px',
+                                                        background: `${item.color}20`,
+                                                        color: item.color
+                                                    }}>
+                                                        {item.icon}
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontWeight: 700, color: 'var(--color-text-main)', fontSize: '1rem' }}>{item.label}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{item.desc}</div>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight size={20} color="var(--color-text-muted)" />
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
 
-                    {/* Icon Style */}
-                    <div style={{ marginBottom: '32px' }}>
-                        <h4 style={{ color: 'var(--color-text-main)', margin: '0 0 12px 0', fontSize: '1rem', fontWeight: 700 }}>Icon Style</h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <motion.div
-                                onClick={() => setIconStyle('mono')}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                style={{
-                                    border: `2px solid ${iconStyle === 'mono'
-                                        ? 'var(--color-primary)'
-                                        : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.4)')}`,
-                                    borderRadius: '16px',
-                                    padding: '16px',
-                                    cursor: 'pointer',
-                                    background: iconStyle === 'mono'
-                                        ? (isDark ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.08)') // Subtle Green Tint
-                                        : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.4)'),
-                                    backdropFilter: 'blur(12px)',
-                                    WebkitBackdropFilter: 'blur(12px)',
-                                    display: 'flex', alignItems: 'center', gap: '12px',
-                                    boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.05)'
-                                }}
-                            >
-                                <div style={{ fontSize: '1.4rem', filter: 'grayscale(100%)' }}>🍕</div>
-                                <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--color-text-main)', fontSize: '0.9rem' }}>Mono</div>
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Minimalist</div>
+                                {/* Install App */}
+                                {deferredPrompt && (
+                                    <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        style={{ marginTop: '32px' }}
+                                    >
+                                        <button
+                                            onClick={promptInstall}
+                                            style={{
+                                                width: '100%', padding: '16px', borderRadius: '16px',
+                                                background: 'var(--color-primary)',
+                                                color: 'white', border: 'none',
+                                                fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                                boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)'
+                                            }}
+                                        >
+                                            <Smartphone size={18} />
+                                            Install App
+                                        </button>
+                                    </motion.div>
+                                )}
+
+                                {/* Footer */}
+                                <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{businessName}</div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>v1.8.6 • Enterprise Platform</div>
                                 </div>
                             </motion.div>
+                        )}
 
+                        {currentView === 'business' && (
+                            <BusinessSettings key="business" onBack={handleBack} />
+                        )}
+
+                        {currentView === 'general' && (
+                            <GeneralSettings key="general" onBack={handleBack} />
+                        )}
+
+                        {currentView === 'team' && (
                             <motion.div
-                                onClick={() => setIconStyle('emoji')}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                style={{
-                                    border: `2px solid ${iconStyle === 'emoji'
-                                        ? 'var(--color-primary)'
-                                        : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.4)')}`,
-                                    borderRadius: '16px',
-                                    padding: '16px',
-                                    cursor: 'pointer',
-                                    background: iconStyle === 'emoji'
-                                        ? (isDark ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.08)') // Subtle Green Tint
-                                        : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.4)'),
-                                    backdropFilter: 'blur(12px)',
-                                    WebkitBackdropFilter: 'blur(12px)',
-                                    display: 'flex', alignItems: 'center', gap: '12px',
-                                    boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.05)'
-                                }}
+                                key="team"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                style={{ padding: '0 4px', paddingBottom: '100px' }}
                             >
-                                <div style={{ fontSize: '1.4rem' }}>🍕</div>
-                                <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--color-text-main)', fontSize: '0.9rem' }}>Emoji</div>
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Vibrant</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                    <button
+                                        onClick={handleBack}
+                                        style={{
+                                            background: 'transparent', border: 'none', color: 'var(--color-text-main)',
+                                            cursor: 'pointer', padding: '8px', borderRadius: '50%',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}
+                                    >
+                                        <ChevronLeft size={24} />
+                                    </button>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--color-text-main)' }}>Manage Team</h3>
                                 </div>
+                                <StaffManagement />
                             </motion.div>
-                        </div>
-                    </div>
-
-
-                    {/* Switches */}
-                    <div style={{
-                        background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.4)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        borderRadius: '24px',
-                        padding: '8px',
-                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.4)'}`
-                    }}>
-
-                        {/* Menu Labels */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderBottom: `1px solid ${borderColor}` }}>
-                            <div>
-                                <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>Menu Labels</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Show text labels in navigation</div>
-                            </div>
-                            <div
-                                onClick={() => setShowMenuLabels(!showMenuLabels)}
-                                style={{
-                                    width: '44px', height: '24px',
-                                    background: showMenuLabels ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                    borderRadius: '12px',
-                                    position: 'relative', cursor: 'pointer',
-                                    transition: 'background 0.3s'
-                                }}
-                            >
-                                <motion.div
-                                    animate={{ x: showMenuLabels ? 22 : 2 }}
-                                    style={{
-                                        width: '20px', height: '20px', background: 'white', borderRadius: '50%',
-                                        position: 'absolute', top: '2px',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Immersive Mode */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px' }}>
-                            <div>
-                                <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>Immersive Mode</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Auto-hide navigation bar</div>
-                            </div>
-                            <div
-                                onClick={() => setMenuBarMode(menuBarMode === 'disappearing' ? 'sticky' : 'disappearing')}
-                                style={{
-                                    width: '44px', height: '24px',
-                                    background: menuBarMode === 'disappearing' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                    borderRadius: '12px',
-                                    position: 'relative', cursor: 'pointer',
-                                    transition: 'background 0.3s'
-                                }}
-                            >
-                                <motion.div
-                                    animate={{ x: menuBarMode === 'disappearing' ? 22 : 2 }}
-                                    style={{
-                                        width: '20px', height: '20px', background: 'white', borderRadius: '50%',
-                                        position: 'absolute', top: '2px',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Sales Popups */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderTop: `1px solid ${borderColor}` }}>
-                            <div>
-                                <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>Sales Popups</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Celebrate milestones with confetti</div>
-                            </div>
-                            <div
-                                onClick={() => setShowMilestoneModal(!showMilestoneModal)}
-                                style={{
-                                    width: '44px', height: '24px',
-                                    background: showMilestoneModal ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                    borderRadius: '12px',
-                                    position: 'relative', cursor: 'pointer',
-                                    transition: 'background 0.3s'
-                                }}
-                            >
-                                <motion.div
-                                    animate={{ x: showMilestoneModal ? 22 : 2 }}
-                                    style={{
-                                        width: '20px', height: '20px', background: 'white', borderRadius: '50%',
-                                        position: 'absolute', top: '2px',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* [NEW] Manage Data Section */}
-                    {_role === 'admin' && (
-                        <div style={{ marginTop: '32px' }}>
-                            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-main)', marginBottom: '16px', opacity: 0.8 }}>System</h3>
-                            <motion.div
-                                whileHover={{ scale: 1.01 }}
-                                whileTap={{ scale: 0.99 }}
-                                onClick={() => {
-                                    triggerHaptic('light');
-                                    openData();
-                                    closeSettings();
-                                }}
-                                style={{
-                                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : borderColor}`,
-                                    borderRadius: '16px',
-                                    padding: '16px',
-                                    cursor: 'pointer',
-                                    background: isDark ? 'rgba(255,255,255,0.03)' : 'var(--color-bg-secondary)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px'
-                                }}
-                            >
-                                <div style={{
-                                    padding: '10px',
-                                    borderRadius: '12px',
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    color: '#ef4444'
-                                }}>
-                                    <Database size={20} />
-                                </div>
-                                <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>Manage Database</div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Backup, Restore & Reset</div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-
-
-                    {/* Install App Link */}
-                    {deferredPrompt && (
-                        <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            style={{ marginTop: '32px' }}
-                        >
-                            <button
-                                onClick={promptInstall}
-                                style={{
-                                    width: '100%', padding: '16px', borderRadius: '16px',
-                                    background: 'var(--color-primary)',
-                                    color: 'white', border: 'none',
-                                    fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                    boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)'
-                                }}
-                            >
-                                <Smartphone size={18} />
-                                Install App
-                            </button>
-                        </motion.div>
-                    )}
-
-                    {/* Version Footer */}
-                    <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>Classic Confection</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>v1.8.6 • Enterprise Edition</div>
-                    </div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </motion.div>
 

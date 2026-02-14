@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/useTheme';
 import { useSettings } from '../context/SettingsContext';
-import { LogOut, User, Settings, Database } from 'lucide-react';
+import { LogOut, User, Settings, Database, ShieldCheck } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 import { triggerHaptic } from '../utils/haptics';
 
@@ -10,7 +11,7 @@ import { Info } from 'lucide-react';
 import RoleInfoModal from './RoleInfoModal'; // [NEW]
 
 const ProfileMenu = () => {
-    const { user, logout, role } = useAuth(); // Get Role from Auth
+    const { user, logout, role, isSuperAdmin, availableBusinesses, switchBusiness, businessId } = useAuth(); // Get Context Props
     const { theme, toggleTheme } = useTheme();
     const { openSettings, openData } = useSettings();
     const [showMenu, setShowMenu] = useState(false);
@@ -80,18 +81,24 @@ const ProfileMenu = () => {
                         width: '42px',
                         height: '42px',
                         borderRadius: '50%',
-                        backgroundColor: 'var(--color-primary)',
-                        color: 'white',
+                        backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                        color: 'var(--color-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        border: 'none',
+                        border: '1px solid var(--color-border)',
                         boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                        transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        overflow: 'hidden',
+                        padding: 0
                     }}
                 >
-                    <User size={20} />
+                    {user?.photoURL ? (
+                        <img src={user.photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        <User size={20} />
+                    )}
                 </button>
 
                 {/* Dropdown Menu */}
@@ -189,6 +196,55 @@ const ProfileMenu = () => {
                             Manage Data
                         </button>
 
+                        {isSuperAdmin && (
+                            <div style={{ padding: '8px', borderTop: '1px solid var(--color-border)', marginTop: '4px' }}>
+                                <div style={{
+                                    fontSize: '0.65rem',
+                                    fontWeight: 800,
+                                    color: 'var(--color-primary)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    marginBottom: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}>
+                                    <ShieldCheck size={12} /> Master View Switcher
+                                </div>
+                                <select
+                                    value={businessId || ''}
+                                    onChange={(e) => {
+                                        switchBusiness(e.target.value);
+                                        setShowMenu(false);
+                                        triggerHaptic('medium');
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        borderRadius: '12px',
+                                        backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                        border: '1px solid var(--color-border)',
+                                        color: 'var(--color-text-main)',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <option value="">Default Business</option>
+                                    {availableBusinesses.map(biz => (
+                                        <option key={biz.id} value={biz.id}>
+                                            {biz.name || biz.id}
+                                        </option>
+                                    ))}
+                                </select>
+                                {availableBusinesses.length === 0 && (
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '4px', textAlign: 'center' }}>
+                                        Loading businesses...
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <button
                             onClick={logout}
                             style={{
@@ -208,7 +264,6 @@ const ProfileMenu = () => {
             {/* [NEW] Role Info Modal */}
             <RoleInfoModal isOpen={showRoleInfo} onClose={() => setShowRoleInfo(false)} />
 
-            {/* Global Styles for Glow that might be needed if not present globally */}
             <style>{`
                 .btn-text-glow:hover { text-shadow: 0 0 12px var(--hover-glow); }
                 .btn-icon-glow:hover svg { filter: drop-shadow(0 0 6px var(--hover-glow)); }

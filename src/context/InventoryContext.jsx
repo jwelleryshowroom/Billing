@@ -8,10 +8,13 @@ import {
     doc,
     onSnapshot,
     writeBatch,
-    getDocs
+    getDocs,
+    query,
+    where
 } from 'firebase/firestore';
 import { useToast } from './useToast';
 import { useAuth } from './useAuth';
+import { getCollectionRef } from '../utils/dataService';
 
 const InventoryContext = createContext();
 
@@ -34,18 +37,22 @@ export const InventoryProvider = ({ children }) => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const { showToast } = useToast();
-    const { user } = useAuth();
+    const { businessId, loading: authLoading } = useAuth();
 
-    // 1. Realtime Sync with Firestore (Only when authenticated)
+    // 1. Realtime Sync with Firestore (Only when authenticated & businessId available)
     useEffect(() => {
-        if (!user) {
+        if (authLoading || !businessId) {
             setItems([]);
-            setLoading(false);
             return;
         }
 
         setLoading(true);
-        const unsubscribe = onSnapshot(collection(db, 'inventory_items'), (snapshot) => {
+        const q = query(
+            getCollectionRef(businessId, 'inventory'),
+            where('businessId', '==', businessId)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             const docs = snapshot.docs.map(doc => ({
                 ...doc.data(),
                 id: doc.id
@@ -68,7 +75,7 @@ export const InventoryProvider = ({ children }) => {
         });
 
         return () => unsubscribe();
-    }, [user]);
+    }, [businessId, authLoading]);
 
     const checkAndSeed = async (currentDocs) => {
         // Double check to prevent loops
@@ -76,13 +83,16 @@ export const InventoryProvider = ({ children }) => {
 
         try {
             // Explicitly check server state once to be sure
-            const snap = await getDocs(collection(db, 'inventory_items'));
+            const q = query(
+                getCollectionRef(businessId, 'inventory')
+            );
+            const snap = await getDocs(q);
             if (snap.size === 0) {
-                console.log("Seeding Database...");
+                console.log("Seeding Database for business:", businessId);
                 const batch = writeBatch(db);
                 defaultItems.forEach(item => {
-                    const docRef = doc(collection(db, 'inventory_items'));
-                    batch.set(docRef, item);
+                    const docRef = doc(getCollectionRef(businessId, 'inventory'));
+                    batch.set(docRef, { ...item, businessId });
                 });
                 await batch.commit();
                 showToast("Database safely seeded with default menu", "success");
@@ -99,7 +109,10 @@ export const InventoryProvider = ({ children }) => {
             // Remove undefined fields to prevent Firestore crashes
             const cleanItem = JSON.parse(JSON.stringify(newItem));
 
-            await addDoc(collection(db, 'inventory_items'), cleanItem);
+            await addDoc(getCollectionRef(businessId, 'inventory'), {
+                ...cleanItem,
+                businessId // Keeping for redundancy/indexing compatibility
+            });
             showToast("Item added to menu", "success");
         } catch (error) {
             console.error("Error adding item:", error);
@@ -110,7 +123,7 @@ export const InventoryProvider = ({ children }) => {
 
     const updateItem = async (id, updates) => {
         try {
-            const docRef = doc(db, 'inventory_items', id);
+            const docRef = doc(getCollectionRef(businessId, 'inventory'), id);
             await updateDoc(docRef, updates);
             // No toast needed for minor updates usually, or keep it subtle
         } catch (error) {
@@ -121,11 +134,74 @@ export const InventoryProvider = ({ children }) => {
 
     const deleteItem = async (id) => {
         try {
-            await deleteDoc(doc(db, 'inventory_items', id));
+            await deleteDoc(doc(getCollectionRef(businessId, 'inventory'), id));
             showToast("Item removed from menu", "success");
         } catch (error) {
             console.error("Error deleting item:", error);
             showToast("Failed to delete item", "error");
+        }
+    };
+
+    const clearAllInventory = async () => {
+        try {
+            const hierarchicalRef = query(getCollectionRef(businessId, 'inventory'), where('businessId', '==', businessId));
+            const hierarchicalSnap = await getDocs(hierarchicalRef);
+
+            const legacyRef = query(collection(db, 'inventory_items'), where('businessId', '==', businessId));
+            const legacySnap = await getDocs(legacyRef);
+
+            if (hierarchicalSnap.size > 0) {
+                const batch = writeBatch(db);
+                hierarchicalSnap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            }
+            if (legacySnap.size > 0) {
+                const batch = writeBatch(db);
+                legacySnap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            }
+            showToast("Inventory cleared.", "success");
+        } catch (error) {
+            console.error("Error clearing inventory:", error);
+            showToast("Failed to clear inventory.", "error");
+        }
+    };
+
+    // [New] Deduplicate Items
+    const deduplicateInventory = async () => {
+        if (!items || items.length === 0) return;
+
+        try {
+            const seen = new Set();
+            const duplicates = [];
+            const batch = writeBatch(db);
+            let dupCount = 0;
+
+            // Sort by creation time (if avail) or just ID to be deterministic
+            // We want to keep the "first" one we see, or the "most complete" one.
+            // Let's iterate and keep the first occurrence of Name+Category.
+
+            items.forEach(item => {
+                const key = `${item.name?.toLowerCase().trim()}-${item.category?.toLowerCase().trim()}`;
+                if (seen.has(key)) {
+                    // This is a duplicate!
+                    const docRef = doc(getCollectionRef(businessId, 'inventory'), item.id);
+                    batch.delete(docRef);
+                    dupCount++;
+                } else {
+                    seen.add(key);
+                }
+            });
+
+            if (dupCount > 0) {
+                await batch.commit();
+                showToast(`Removed ${dupCount} duplicate items.`, "success");
+            } else {
+                showToast("No duplicates found.", "info");
+            }
+        } catch (error) {
+            console.error("Deduplication failed:", error);
+            showToast("Failed to remove duplicates.", "error");
         }
     };
 
@@ -135,7 +211,7 @@ export const InventoryProvider = ({ children }) => {
     };
 
     return (
-        <InventoryContext.Provider value={{ items, addItem, updateItem, deleteItem, getItemsByCategory, loading }}>
+        <InventoryContext.Provider value={{ items, addItem, updateItem, deleteItem, clearAllInventory, deduplicateInventory, getItemsByCategory, loading }}>
             {children}
         </InventoryContext.Provider>
     );

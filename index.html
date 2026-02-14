@@ -81,7 +81,7 @@
     .splash-logo {
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
       border-radius: 28px;
     }
 
@@ -95,12 +95,10 @@
     }
 
     [data-theme="dark"] .splash-logo {
-      /* Remove Black Background from Image */
-      mix-blend-mode: screen;
       /* Ensure it fits nicely inside the padding */
-      width: 85%;
-      height: 85%;
-      border-radius: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
       box-shadow: none;
     }
 
@@ -146,20 +144,46 @@
 <body>
   <div id="root">
     <div class="initial-loader">
-      <div class="glass-icon-container">
-        <img id="splash-icon" class="splash-logo" src="/logo-light.png" alt="TCC Logo" />
+      <div class="glass-icon-container" id="splash-logo-container">
+        <!-- Will be populated by JS -->
       </div>
       <div class="initial-spinner"></div>
-      <div style="font-weight: 500; letter-spacing: 0.5px; opacity: 0.8;">Loading The Classic Confection...</div>
+      <div id="splash-text"
+        style="font-weight: 600; letter-spacing: 0.5px; opacity: 0.8; text-transform: uppercase; font-size: 0.85rem;">
+        Loading...</div>
     </div>
     <script>
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      const logoImg = document.getElementById('splash-icon');
-      if (currentTheme === 'dark') {
-        logoImg.src = '/logo-dark-transparent.png';
-      } else {
-        logoImg.src = '/logo-light.png';
-      }
+      (function () {
+        const cachedName = localStorage.getItem('cached_business_name') || 'Lekha Kosh';
+        const cachedLogo = localStorage.getItem('cached_business_logo') || '🏦';
+        const cachedLogoUrl = localStorage.getItem('cached_business_logo_url');
+        const cachedColor = localStorage.getItem('cached_primary_color');
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+
+        // Update Text
+        document.getElementById('splash-text').innerText = 'Loading ' + cachedName + '...';
+
+        // Update Theme Color if cached
+        if (cachedColor) {
+          document.documentElement.style.setProperty('--spinner-color', cachedColor);
+          // Update spinner color dynamically
+          const style = document.createElement('style');
+          style.innerHTML = `.initial-spinner { border-top-color: ${cachedColor} !important; }`;
+          document.head.appendChild(style);
+        }
+
+        // Update Logo
+        const container = document.getElementById('splash-logo-container');
+        if (cachedLogoUrl) {
+          container.innerHTML = `<img class="splash-logo" src="${cachedLogoUrl}" alt="Logo" />`;
+        } else {
+          container.style.fontSize = '4rem';
+          container.style.background = 'transparent';
+          container.style.boxShadow = 'none';
+          container.style.border = 'none';
+          container.innerText = cachedLogo;
+        }
+      })();
     </script>
   </div>
   <script type="module" src="/src/main.jsx"></script>

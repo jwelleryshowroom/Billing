@@ -4,12 +4,14 @@ import Modal from '../Modal';
 import ReceiptPrinter from '../ReceiptPrinter';
 import { generateWhatsAppLink } from '../../utils/smartHelpers';
 import { triggerHaptic } from '../../utils/haptics';
+import { useAuth } from '../../context/useAuth';
 
 const TransactionPreviewModal = ({
     isOpen,
     onClose,
     data
 }) => {
+    const { businessId } = useAuth();
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Invoice Placed">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
@@ -36,7 +38,7 @@ const TransactionPreviewModal = ({
                     <button
                         onClick={() => {
                             triggerHaptic('success');
-                            const url = generateWhatsAppLink(data);
+                            const url = generateWhatsAppLink(data, businessId);
                             window.open(url, '_blank');
                         }}
                         className="btn-whatsapp"

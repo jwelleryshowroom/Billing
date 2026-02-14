@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, query, where, serverTimestamp, increment, writeBatch } from 'firebase/firestore';
 import { useToast } from './useToast';
+import { useAuth } from './useAuth';
+import { getCollectionRef } from '../utils/dataService';
+
 
 const CustomerContext = createContext();
 
@@ -11,12 +14,22 @@ export const CustomerProvider = ({ children }) => {
     const [customers, setCustomers] = useState({}); // Cache by Phone Number
     const [loading, setLoading] = useState(true);
     const { showToast } = useToast();
+    const { businessId, loading: authLoading } = useAuth();
+
 
     // 1. Initial Load (Build Cache)
     useEffect(() => {
+        if (authLoading || !businessId) {
+            setCustomers({});
+            return;
+        }
+
         const fetchCustomers = async () => {
             try {
-                const q = query(collection(db, 'customers'));
+                const q = query(
+                    getCollectionRef(businessId, 'customers'),
+                    where('businessId', '==', businessId)
+                );
                 const snapshot = await getDocs(q);
 
                 const cache = {};
@@ -37,7 +50,7 @@ export const CustomerProvider = ({ children }) => {
         };
 
         fetchCustomers();
-    }, []);
+    }, [businessId, authLoading]);
 
     // 2. Add or Update Customer (Called on Checkout)
     const addOrUpdateCustomer = async (transactionData) => {
@@ -48,13 +61,14 @@ export const CustomerProvider = ({ children }) => {
 
         const phone = customer.phone;
         const name = customer.name || 'Unknown';
-        const docRef = doc(db, 'customers', phone);
+        const customerRef = doc(getCollectionRef(businessId, 'customers'), phone);
 
         try {
             const exists = customers[phone];
 
             const updates = {
                 phone,
+                businessId, // Inject businessId
                 name, // Always update name to latest used
                 lastVisit: serverTimestamp(),
                 visitCount: increment(1),
@@ -79,7 +93,7 @@ export const CustomerProvider = ({ children }) => {
             }));
 
             // Async Firestore Update
-            await setDoc(docRef, updates, { merge: true });
+            await setDoc(customerRef, updates, { merge: true });
 
         } catch (error) {
             console.error("Error saving customer:", error);
@@ -93,11 +107,38 @@ export const CustomerProvider = ({ children }) => {
         return customers[phone] || null;
     };
 
+    const clearAllCustomers = async () => {
+        try {
+            const hierarchicalRef = query(getCollectionRef(businessId, 'customers'), where('businessId', '==', businessId));
+            const hierarchicalSnap = await getDocs(hierarchicalRef);
+
+            const legacyRef = query(collection(db, 'customers'), where('businessId', '==', businessId));
+            const legacySnap = await getDocs(legacyRef);
+
+            if (hierarchicalSnap.size > 0) {
+                const batch = writeBatch(db);
+                hierarchicalSnap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            }
+            if (legacySnap.size > 0) {
+                const batch = writeBatch(db);
+                legacySnap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            }
+            setCustomers({});
+            showToast("Customer database cleared.", "success");
+        } catch (error) {
+            console.error("Error clearing customers:", error);
+            showToast("Failed to clear customers.", "error");
+        }
+    };
+
     const value = {
         customers,
         loading,
         addOrUpdateCustomer,
-        getCustomerByPhone
+        getCustomerByPhone,
+        clearAllCustomers
     };
 
     return (

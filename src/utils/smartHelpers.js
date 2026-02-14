@@ -59,17 +59,27 @@ export const getSmartEmoji = (name, category) => {
     return '';
 };
 
-export const generateWhatsAppLink = (order) => {
-    const link = `${window.location.origin}/view/${order.id}`;
+export const generateWhatsAppLink = (order, businessId, settings = {}) => {
+    // Professional Link: includes businessId for direct routing
+    const bizPart = businessId ? `${businessId}/` : (order.businessId ? `${order.businessId}/` : '');
+
+    // Use configured Public URL if available, otherwise fallback to window.location.origin (but warn/fail on localhost for external)
+    const baseUrl = settings.publicUrl || window.location.origin;
+    const link = `${baseUrl}/view/${bizPart}${order.id}`;
+
     const phone = order.customer?.phone || '';
+    const bizName = settings.businessName || 'LEKHA KOSH 🏦';
+    const footer = settings.businessFooter || '';
 
     // Distinction Logic
     const isBooking = order.type === 'order' && order.status !== 'completed' && order.status !== 'delivered';
     const docType = isBooking ? 'BOOKING SLIP' : 'INVOICE';
-    const closeMsg = isBooking ? 'Order is subject to confirmation.' : 'Please visit us again! 🙏';
+
+    let closeMsg = isBooking ? 'Order is subject to confirmation.' : 'Please visit us again! 🙏';
+    if (footer) closeMsg = footer;
 
     // Message Construction (Safe Emojis)
-    const message = `*THE CLASSIC CONFECTION* 🧁\n` +
+    const message = `*${bizName}*\n` +
         `Hello *${order.customer?.name || 'Customer'}*,\n` +
         `Here is your ${docType} for Order *#${order.id.slice(-6).toUpperCase()}*:\n` +
         `${link}\n\n` +

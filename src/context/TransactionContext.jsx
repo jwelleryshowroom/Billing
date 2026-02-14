@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, query, orderBy, writeBatch, getDocs, where } from 'firebase/firestore';
+import { collection, addDoc, setDoc, deleteDoc, updateDoc, doc, onSnapshot, query, orderBy, writeBatch, getDocs, where } from 'firebase/firestore';
 import { useToast } from './useToast';
 import { startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { TransactionContext } from './TransactionContextDef';
+import { useAuth } from './useAuth';
+import { getCollectionRef } from '../utils/dataService';
 
 export const TransactionProvider = ({ children }) => {
     const [transactions, setTransactions] = useState([]);
@@ -14,11 +16,19 @@ export const TransactionProvider = ({ children }) => {
         end: endOfMonth(new Date())
     });
     const { showToast } = useToast();
+    const { businessId, loading: authLoading } = useAuth();
 
     useEffect(() => {
-        // Optimized Listener: Only listen to the requested range
+        if (authLoading || !businessId) {
+            setTransactions([]);
+            return;
+        }
+
+        // Root-level Query with Isolation
         const q = query(
-            collection(db, 'transactions'),
+            getCollectionRef(businessId, 'transactions'),
+            // Removed redundant businessId filter as we are querying a specific sub-collection
+            // where('businessId', '==', businessId),
             where('date', '>=', currentRange.start.toISOString()),
             where('date', '<=', currentRange.end.toISOString()),
             orderBy('date', 'desc')
@@ -33,15 +43,21 @@ export const TransactionProvider = ({ children }) => {
             setLoading(false);
         }, (error) => {
             console.error("Error fetching transactions:", error);
-            // Ignore specialized index errors initially, as they might pop up before index is built
-            if (error.code !== 'failed-precondition') {
+
+            // Handle specific cases
+            if (error.code === 'permission-denied') {
+                showToast("Access Denied: Restricted data area.", "error");
+            } else if (error.code === 'failed-precondition') {
+                // Usually missing index - keep it subtle or log link
+                console.warn("Firestore Index Required. Check console for builder link.");
+            } else {
                 showToast("Failed to sync data.", "error");
             }
             setLoading(false);
         });
 
         return () => unsubscribe();
-    }, [currentRange, showToast]);
+    }, [currentRange, showToast, businessId, authLoading]);
 
     // Function to update the view (Components call this to switch context)
     const setViewDateRange = React.useCallback((startDate, endDate) => {
@@ -58,9 +74,12 @@ export const TransactionProvider = ({ children }) => {
             // Remove undefined fields to prevent Firestore crashes
             const cleanTransaction = JSON.parse(JSON.stringify(transaction));
 
-            const docRef = await addDoc(collection(db, 'transactions'), {
+            const docRef = doc(getCollectionRef(businessId, 'transactions'));
+            await setDoc(docRef, {
                 ...cleanTransaction,
-                date: cleanTransaction.date || new Date().toISOString(), // Use provided date or new
+                id: docRef.id, // Store ID inside for global lookups
+                businessId,
+                date: cleanTransaction.date || new Date().toISOString(),
                 createdAt: new Date().toISOString()
             });
             // Silent success (User requested removal of notification)
@@ -77,7 +96,7 @@ export const TransactionProvider = ({ children }) => {
             // Remove any undefined fields to prevent Firestore errors
             const cleanUpdates = JSON.parse(JSON.stringify(updates));
 
-            await updateDoc(doc(db, 'transactions', id), cleanUpdates);
+            await updateDoc(doc(getCollectionRef(businessId, 'transactions'), id), cleanUpdates);
             showToast("Order updated.", "success");
         } catch (error) {
             console.error("Error updating transaction:", error);
@@ -90,7 +109,7 @@ export const TransactionProvider = ({ children }) => {
         const transactionToDelete = transactions.find(t => t.id === id);
 
         try {
-            await deleteDoc(doc(db, 'transactions', id));
+            await deleteDoc(doc(getCollectionRef(businessId, 'transactions'), id));
 
             if (transactionToDelete) {
                 const { id: _, ...dataToRestore } = transactionToDelete;
@@ -132,20 +151,25 @@ export const TransactionProvider = ({ children }) => {
 
     const deleteTransactionsByDateRange = async (startDate, endDate) => {
         try {
-            const q = query(
-                collection(db, 'transactions'),
-                where('date', '>=', startDate),
-                where('date', '<=', endDate)
-            );
-            const snapshot = await getDocs(q);
+            // 1. Hierarchical
+            const hierarchicalRef = getCollectionRef(businessId, 'transactions');
+            const hQuery = query(hierarchicalRef, where('date', '>=', startDate), where('date', '<=', endDate));
+            const hSnap = await getDocs(hQuery);
 
-            if (snapshot.empty) {
+            // 2. Legacy
+            const legacyRef = collection(db, 'transactions');
+            const lQuery = query(legacyRef, where('businessId', '==', businessId), where('date', '>=', startDate), where('date', '<=', endDate));
+            const lSnap = await getDocs(lQuery);
+
+            let deleted = 0;
+            if (hSnap.size > 0) deleted += await safeBatchDelete(hSnap);
+            if (lSnap.size > 0) deleted += await safeBatchDelete(lSnap);
+
+            if (deleted === 0) {
                 showToast("No records found in range.", "info");
-                return;
+            } else {
+                showToast(`Cleared ${deleted} records safely.`, "success");
             }
-
-            const count = await safeBatchDelete(snapshot);
-            showToast(`Cleared ${count} records safely.`, "success");
         } catch (error) {
             console.error("Error deleting data range:", error);
             showToast("Failed to clear data.", "error");
@@ -154,15 +178,25 @@ export const TransactionProvider = ({ children }) => {
 
     const clearAllTransactions = async () => {
         try {
-            const snapshot = await getDocs(collection(db, 'transactions'));
+            // 1. Clear Data in root (Professional/Legacy combined)
+            const hierarchicalRef = query(getCollectionRef(businessId, 'transactions'), where('businessId', '==', businessId));
+            const hierarchicalSnap = await getDocs(hierarchicalRef);
 
-            if (snapshot.empty) {
+            // 2. Clear Legacy Data (Flat)
+            const legacyRef = query(collection(db, 'transactions'), where('businessId', '==', businessId));
+            const legacySnap = await getDocs(legacyRef);
+
+            const total = hierarchicalSnap.size + legacySnap.size;
+            if (total === 0) {
                 showToast("Database is already empty.", "info");
                 return;
             }
 
-            const count = await safeBatchDelete(snapshot);
-            showToast(`Database wiped (${count} records).`, "success");
+            let deleted = 0;
+            if (hierarchicalSnap.size > 0) deleted += await safeBatchDelete(hierarchicalSnap);
+            if (legacySnap.size > 0) deleted += await safeBatchDelete(legacySnap);
+
+            showToast(`Database wiped (${deleted} records).`, "success");
         } catch (error) {
             console.error("Error clearing database:", error);
             showToast("Failed to wipe database.", "error");

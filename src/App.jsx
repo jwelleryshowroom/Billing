@@ -30,6 +30,8 @@ const Billing = lazy(() => import('./components/Billing'));
 const Orders = lazy(() => import('./components/Orders'));
 const Inventory = lazy(() => import('./components/Inventory'));
 const PublicInvoice = lazy(() => import('./components/PublicInvoice'));
+const SuperAdmin = lazy(() => import('./components/SuperAdmin'));
+
 // Analytics & Reports are currently inside Home/Dashboard, but if referenced by Route, lazy load them.
 // Currently MainLayout defines routes.
 
@@ -49,6 +51,7 @@ const MainLayout = () => {
               <Route path="/billing" element={<PageTransition><Billing /></PageTransition>} />
               <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
               <Route path="/inventory" element={<PageTransition><Inventory /></PageTransition>} />
+              <Route path="/super-admin" element={<PageTransition><SuperAdmin /></PageTransition>} />
             </Routes>
           </AnimatePresence>
         </Suspense>
@@ -76,12 +79,28 @@ const ErrorBoundaryWrapper = ({ children }) => {
 const ProtectedApp = () => {
   const { user, isAllowed, loading } = useAuth();
 
-  if (loading || isAllowed === null) return (
-    <div className="loading-container">
-      <div className="spinner"></div>
-      <div style={{ fontWeight: 500, letterSpacing: '0.5px' }}>Loading Tracker...</div>
-    </div>
-  );
+  if (loading || isAllowed === null) {
+    const cachedName = localStorage.getItem('cached_business_name') || 'Lekha Kosh';
+    const cachedLogo = localStorage.getItem('cached_business_logo') || '🏦';
+    const cachedLogoUrl = localStorage.getItem('cached_business_logo_url');
+    const cachedColor = localStorage.getItem('cached_primary_color');
+
+    return (
+      <div className="loading-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '20px' }}>
+        <div style={{
+          width: '80px', height: '80px', borderRadius: '20px', backgroundColor: 'rgba(255,255,255,0.05)',
+          border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden', fontSize: '2.5rem', boxShadow: '0 8px 16px rgba(0,0,0,0.05)'
+        }}>
+          {cachedLogoUrl ? <img src={cachedLogoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : cachedLogo}
+        </div>
+        <div className="spinner" style={{ borderTopColor: cachedColor || 'var(--color-primary)' }}></div>
+        <div style={{ fontWeight: 600, letterSpacing: '1px', fontSize: '0.8rem', opacity: 0.6, textTransform: 'uppercase' }}>
+          {cachedName}
+        </div>
+      </div>
+    );
+  }
 
   if (!user) return <Login />;
 

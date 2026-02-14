@@ -59,23 +59,25 @@ const Login = () => {
             }}>
                 <div style={{ marginBottom: '24px' }}>
                     <div style={{
-                        fontSize: '2rem',
+                        fontSize: '2.5rem',
                         fontFamily: '"Playfair Display", serif',
-                        fontWeight: 700,
+                        fontWeight: 800,
                         color: isDark ? '#E0E0E0' : '#4a3b32',
-                        lineHeight: 1.2,
-                        marginBottom: '8px'
+                        lineHeight: 1.1,
+                        marginBottom: '4px',
+                        letterSpacing: '-1px'
                     }}>
-                        The Classic<br />Confection
+                        Lekha Kosh
                     </div>
                     <div style={{
                         color: isDark ? '#A0A0A0' : '#8c7e72',
-                        fontSize: '0.9rem',
-                        fontWeight: 500,
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
                         textTransform: 'uppercase',
-                        letterSpacing: '2px'
+                        letterSpacing: '3px',
+                        opacity: 0.8
                     }}>
-                        Sales & Expense Tracker
+                        Smart Accounting. Global Control.
                     </div>
                 </div>
 

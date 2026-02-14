@@ -3,9 +3,12 @@ import { useTransactions } from '../../../context/useTransactions';
 import { useAuth } from '../../../context/useAuth';
 import { generateWhatsAppLink } from '../../../utils/smartHelpers';
 
+import { useSettings } from '../../../context/SettingsContext';
+
 const useOrderActions = () => {
     const { updateTransaction, addTransaction } = useTransactions();
-    const { role } = useAuth();
+    const { role, businessId } = useAuth();
+    const { businessName, publicUrl, businessFooter } = useSettings();
 
     // --- Receipt State ---
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -26,7 +29,7 @@ const useOrderActions = () => {
     };
 
     const handleSmartShare = (order) => {
-        const url = generateWhatsAppLink(order);
+        const url = generateWhatsAppLink(order, businessId, { businessName, publicUrl, businessFooter });
         window.open(url, '_blank');
     };
 

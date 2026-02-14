@@ -2,28 +2,54 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useTransactions } from '../context/useTransactions';
 import { useAuth } from '../context/useAuth';
 import { useSettings } from '../context/SettingsContext';
+import { useInventory } from '../context/InventoryContext';
+import { useCustomers } from '../context/CustomerContext';
+import { useToast } from '../context/useToast';
+import { migrateBusinessData } from '../utils/migration';
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getISOWeek, getYear } from 'date-fns';
-import { Trash2, AlertTriangle, Calendar, ChevronRight, ChevronDown, CheckCircle2, ShieldAlert, ArrowRight, X } from 'lucide-react';
+import { Trash2, AlertTriangle, Calendar, ChevronRight, ChevronDown, CheckCircle2, ShieldAlert, ArrowRight, X, Sparkles, Database } from 'lucide-react';
 
 const DataManagementDrawer = () => {
     const { transactions, deleteTransactionsByDateRange, clearAllTransactions } = useTransactions();
-    const { role } = useAuth();
+    const { clearAllInventory, deduplicateInventory } = useInventory();
+    const { clearAllCustomers } = useCustomers();
+    const { showToast } = useToast();
+    const { role, businessId, isSuperAdmin } = useAuth();
     const { isDataOpen, closeData } = useSettings();
     const [confirmModal, setConfirmModal] = useState({ show: false, range: null, title: '', message: '' });
     const [loading, setLoading] = useState(false);
+    const [migrationStatus, setMigrationStatus] = useState(null); // 'loading', 'done', 'error'
     const [viewMode, setViewMode] = useState('day'); // 'day', 'week', 'month'
 
     // Prevent body scroll when open
-    useEffect(() => {
-        if (isDataOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
+    const handleFactoryReset = async () => {
+        setLoading(true);
+        try {
+            await clearAllTransactions();
+            await clearAllInventory();
+            await clearAllCustomers();
+            showToast("FRESH START: All data for this business has been cleaned! 🧼", "success");
+            setConfirmModal({ show: false, range: null, title: '', message: '' });
+        } catch (error) {
+            console.error(error);
+            showToast("Factory reset failed partially.", "error");
         }
-        return () => {
-            document.body.style.overflow = '';
-        };
-    }, [isDataOpen]);
+        setLoading(false);
+    };
+
+    const handleMigrate = async () => {
+        if (!businessId) return;
+        setMigrationStatus('loading');
+        try {
+            await migrateBusinessData(businessId);
+            setMigrationStatus('done');
+            showToast("Data successfully upgraded to professional structure! 🚀", "success");
+        } catch (error) {
+            console.error(error);
+            setMigrationStatus('error');
+            showToast("Upgrade failed. Check console or try again.", "error");
+        }
+    };
 
     // Group transactions dynamically based on viewMode
     const groups = useMemo(() => {
@@ -98,20 +124,32 @@ const DataManagementDrawer = () => {
         });
     };
 
+    useEffect(() => {
+        if (isDataOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isDataOpen]);
+
     const confirmDelete = async () => {
+        if (confirmModal.range === 'all') {
+            await handleFactoryReset();
+            return;
+        }
+
         setLoading(true);
         try {
-            if (confirmModal.range === 'all') {
-                await clearAllTransactions();
-            } else {
-                await deleteTransactionsByDateRange(
-                    confirmModal.range.start.toISOString(),
-                    confirmModal.range.end.toISOString()
-                );
-            }
+            await deleteTransactionsByDateRange(
+                confirmModal.range.start.toISOString(),
+                confirmModal.range.end.toISOString()
+            );
             setConfirmModal({ show: false, range: null, title: '', message: '' });
         } catch {
-            alert("Error deleting data.");
+            showToast("Error deleting data.", "error");
         }
         setLoading(false);
     };
@@ -212,6 +250,50 @@ const DataManagementDrawer = () => {
                         </div>
                     </div>
 
+                    {/* Data Structure Upgrade (Migration) */}
+                    {role === 'admin' && (
+                        <div className="card" style={{
+                            marginBottom: '24px',
+                            padding: '20px',
+                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                            border: '1px solid rgba(99, 102, 241, 0.2)',
+                            borderRadius: '24px'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                <div style={{ padding: '10px', background: 'var(--color-primary)', borderRadius: '12px', color: 'white' }}>
+                                    <Sparkles size={20} />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text-main)' }}>Upgrade Search Engine</h3>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: 0 }}>Sync data with the new professional structure.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleMigrate}
+                                disabled={migrationStatus === 'loading'}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: '12px',
+                                    backgroundColor: migrationStatus === 'done' ? 'var(--color-success)' : 'var(--color-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                    opacity: migrationStatus === 'loading' ? 0.7 : 1
+                                }}
+                            >
+                                {migrationStatus === 'loading' ? 'Upgrading...' : migrationStatus === 'done' ? <><CheckCircle2 size={18} /> Upgrade Finished</> : <><Database size={18} /> Run Sync Tool</>}
+                            </button>
+                            {migrationStatus !== 'done' && (
+                                <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '8px', textAlign: 'center', fontStyle: 'italic' }}>
+                                    Recommended after first-time brand update.
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {/* Toggle Switch */}
                     <div style={{ display: 'flex', marginBottom: '24px', backgroundColor: 'var(--color-bg-surface)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
                         {['day', 'week', 'month'].map(mode => (
@@ -247,7 +329,7 @@ const DataManagementDrawer = () => {
                         {groups.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}>
                                 <CheckCircle2 size={48} style={{ marginBottom: '10px', opacity: 0.5 }} />
-                                <p>No data found.</p>
+                                <p>No data found in current view.</p>
                             </div>
                         ) : (
                             groups.map((group, index) => (
@@ -284,8 +366,50 @@ const DataManagementDrawer = () => {
                         )}
                     </div>
 
+                    {/* Maintenance Zone */}
+                    {role === 'admin' && (
+                        <div className="card" style={{
+                            marginBottom: '24px',
+                            padding: '20px',
+                            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)',
+                            border: '1px solid rgba(34, 197, 94, 0.2)',
+                            borderRadius: '24px'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                <div style={{ padding: '10px', background: 'var(--color-success)', borderRadius: '12px', color: 'white' }}>
+                                    <Sparkles size={20} />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text-main)' }}>Maintenance</h3>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: 0 }}>Fix data inconsistencies.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    setLoading(true);
+                                    await deduplicateInventory();
+                                    setLoading(false);
+                                }}
+                                disabled={loading}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: '12px',
+                                    backgroundColor: 'var(--color-bg-surface)',
+                                    color: 'var(--color-success)',
+                                    border: '1px solid var(--color-success)',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                }}
+                            >
+                                <Sparkles size={18} /> Clean Up Duplicates
+                            </button>
+                        </div>
+                    )}
+
                     {/* Danger Zone (Reset UI) */}
-                    {groups.length > 0 && (
+                    {role === 'admin' && (
                         <div className="card" style={{
                             padding: '24px',
                             border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -298,7 +422,7 @@ const DataManagementDrawer = () => {
                                 <span style={{ fontWeight: 700, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Danger Zone</span>
                             </div>
                             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', marginBottom: '20px', lineHeight: 1.5 }}>
-                                Resetting the database will permanently delete all transaction history. This action cannot be undone.
+                                Start fresh? Resetting will permanently delete all history, inventory, and customer data for this business.
                             </p>
                             <button
                                 onClick={handleClearAll}

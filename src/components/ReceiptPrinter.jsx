@@ -2,8 +2,11 @@ import React from 'react';
 import { format } from 'date-fns';
 import { Printer, Share2 } from 'lucide-react';
 
+import { useSettings } from '../context/SettingsContext';
+
 const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
     const isBooking = type === 'ORDER_BOOKING';
+    const { businessName, businessAddress, businessPhone, businessFooter } = useSettings();
 
     // Formatting Helpers
     const formatCurrency = (amount) => Number(amount).toFixed(2);
@@ -18,10 +21,9 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
 
     const Header = () => (
         <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>THE CLASSIC CONFECTION</div>
-            <div style={{ fontSize: '11px' }}>Mahavir Marg, opp. Hotel Shyam Palace</div>
-            <div style={{ fontSize: '11px' }}>Gandhi Chowk, Kishanganj, Bihar 855108</div>
-            <div style={{ fontSize: '12px', marginTop: '2px' }}>Ph: +91-8294556416</div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase' }}>{businessName}</div>
+            {businessAddress && <div style={{ fontSize: '11px', whiteSpace: 'pre-wrap' }}>{businessAddress}</div>}
+            {businessPhone && <div style={{ fontSize: '12px', marginTop: '2px' }}>Ph: {businessPhone}</div>}
         </div>
     );
 

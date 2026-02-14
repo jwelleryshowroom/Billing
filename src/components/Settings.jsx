@@ -9,7 +9,15 @@ const Settings = ({ onClose }) => {
     const { dashboardMode, setDashboardMode } = useTheme();
     const { role: _role } = useAuth();
     const { deferredPrompt, promptInstall, isIOS, isStandalone } = useInstall();
-    const { menuBarMode, setMenuBarMode, iconStyle, setIconStyle, showMenuLabels, setShowMenuLabels, homeLayoutMode, setHomeLayoutMode } = useSettings();
+    const {
+        menuBarMode, setMenuBarMode, iconStyle, setIconStyle, showMenuLabels, setShowMenuLabels, homeLayoutMode, setHomeLayoutMode,
+        businessName, setBusinessName,
+        businessAddress, setBusinessAddress,
+        businessPhone, setBusinessPhone,
+        businessFooter, setBusinessFooter,
+        businessMapLink, setBusinessMapLink,
+        publicUrl, setPublicUrl
+    } = useSettings();
 
     return (
         <div style={{ padding: '0 4px', height: '100%', overflowY: 'auto' }}>
@@ -38,6 +46,85 @@ const Settings = ({ onClose }) => {
                     <h2 style={{ fontSize: '1.2rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
                         <SettingsIcon size={20} /> App Settings
                     </h2>
+                </div>
+
+                {/* --- Business Info --- */}
+                <div style={{ marginBottom: '24px' }}>
+                    <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, marginBottom: '16px', color: 'var(--color-text-main)' }}>
+                        Business Details
+                    </label>
+
+                    <div className="input-group">
+                        <label className="input-label">Business Name</label>
+                        <input
+                            type="text"
+                            className="input-field"
+                            value={businessName}
+                            onChange={(e) => setBusinessName(e.target.value)}
+                            placeholder="e.g. The Classic Confection"
+                        />
+                    </div>
+
+                    <div className="input-group">
+                        <label className="input-label">Phone Label (on Bill)</label>
+                        <input
+                            type="text"
+                            className="input-field"
+                            value={businessPhone}
+                            onChange={(e) => setBusinessPhone(e.target.value)}
+                            placeholder="e.g. +91-9876543210"
+                        />
+                    </div>
+
+                    <div className="input-group">
+                        <label className="input-label">Address (Line 1, Line 2...)</label>
+                        <textarea
+                            className="input-field"
+                            value={businessAddress}
+                            onChange={(e) => setBusinessAddress(e.target.value)}
+                            placeholder="e.g. 123 Main St, New York, NY"
+                            rows={3}
+                            style={{ resize: 'vertical' }}
+                        />
+                    </div>
+
+                    <div className="input-group">
+                        <label className="input-label">Google Map Link (for Reviews/Location)</label>
+                        <input
+                            type="url"
+                            className="input-field"
+                            value={businessMapLink}
+                            onChange={(e) => setBusinessMapLink(e.target.value)}
+                            placeholder="e.g. https://maps.app.goo.gl/..."
+                        />
+                    </div>
+
+                    <div className="input-group">
+                        <label className="input-label">Bill Footer Message</label>
+                        <input
+                            type="text"
+                            className="input-field"
+                            value={businessFooter}
+                            onChange={(e) => setBusinessFooter(e.target.value)}
+                            placeholder="e.g. Thank you for visiting!"
+                        />
+                    </div>
+
+                    <div className="input-group">
+                        <label className="input-label">
+                            Public Invoice Link (Base URL)
+                            <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 400, color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                Required for WhatsApp links to work externally. Enter your deployed URL (e.g., https://my-app.web.app). Leave empty to use auto-detection (fails on localhost).
+                            </span>
+                        </label>
+                        <input
+                            type="url"
+                            className="input-field"
+                            value={publicUrl}
+                            onChange={(e) => setPublicUrl(e.target.value)}
+                            placeholder="https://your-app-url.com"
+                        />
+                    </div>
                 </div>
 
                 {/* Munna Bhai Role Badge */}

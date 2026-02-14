@@ -164,8 +164,12 @@ const Orders = () => {
                         style={{
                             flex: 1,
                             overflowY: 'auto',
-                            paddingBottom: '120px',
+                            paddingBottom: '180px',
                             paddingTop: '16px',
+                            paddingLeft: isMobile ? '16px' : '24px', // [UPDATED] Dynamic padding
+                            paddingRight: isMobile ? '16px' : '24px', // [UPDATED] Dynamic padding
+                            marginLeft: isMobile ? '-16px' : '-24px', // [UPDATED] Dynamic negative margin
+                            marginRight: isMobile ? '-16px' : '-24px', // [UPDATED] Dynamic negative margin
                             marginBottom: '0',
                             display: isMobile ? 'block' : 'grid',
                             gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
