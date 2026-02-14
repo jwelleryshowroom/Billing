@@ -138,10 +138,12 @@ const PublicInvoice = () => {
                 </div>
 
                 {/* 3. Items Header */}
-                {/* 3. Items Header - Simplified */}
+                {/* 3. Items Header - Detailed Columns */}
                 <div style={{
-                    paddingBottom: '0.5rem',
-                    borderBottom: '2px dashed #f3f4f6',
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(100px, 1fr) 40px 60px 80px',
+                    paddingBottom: '0.75rem',
+                    borderBottom: '2px dashed #e5e7eb',
                     fontSize: '0.7rem',
                     fontWeight: '700',
                     color: '#9ca3af',
@@ -149,7 +151,10 @@ const PublicInvoice = () => {
                     marginBottom: '1rem',
                     letterSpacing: '0.05em'
                 }}>
-                    ORDER ITEMS
+                    <span>Item</span>
+                    <span style={{ textAlign: 'center' }}>Qty</span>
+                    <span style={{ textAlign: 'right' }}>Rate</span>
+                    <span style={{ textAlign: 'right' }}>Total</span>
                 </div>
 
                 {/* Items List */}
