@@ -27,6 +27,9 @@ service cloud.firestore {
     // Is the user a member of this business?
     function isMember(bizId) {
       return isAuthenticated() && (
+        isSuperAdmin() || 
+        (hasAuth(request.auth.token.email.lower()) && 
+         getAuth(request.auth.token.email.lower()).businessId == bizId)
       );
     }
 
