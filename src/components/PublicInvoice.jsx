@@ -198,7 +198,7 @@ const PublicInvoice = () => {
             </div>
 
             <div style={{ position: 'fixed', bottom: '2px', right: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>
-                v2.2.0
+                v2.3.0
             </div>
         </div>
     );
