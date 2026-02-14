@@ -4,6 +4,7 @@ import { collection, doc, getDoc, collectionGroup, query, where, getDocs } from 
 import { db } from '../firebase';
 import { getCollectionRef } from '../utils/dataService';
 import { Loader2, AlertCircle, Phone, Share2, ChefHat, MapPin, Star } from 'lucide-react';
+import '../public-invoice.css';
 
 const PublicInvoice = () => {
     const { orderId, businessId } = useParams();
