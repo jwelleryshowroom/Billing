@@ -122,7 +122,68 @@ const PublicInvoice = () => {
                         {bizPhone}
                     </div>
 
-                    {/* ... (rest of the component) ... */}
+                    {/* Transaction Metadata */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', borderBottom: '1px dashed #e5e7eb', paddingBottom: '0.5rem', fontSize: '0.75rem' }}>
+                        <div>
+                            <span style={{ color: '#6b7280' }}>Date:</span> <span style={{ fontWeight: '500' }}>{transaction.date ? new Date(transaction.date).toLocaleDateString() : 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span style={{ color: '#6b7280' }}>Time:</span> <span style={{ fontWeight: '500' }}>{transaction.date ? new Date(transaction.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.75rem' }}>
+                        <div>
+                            <span style={{ color: '#6b7280' }}>Order ID:</span> <span style={{ fontWeight: '600', color: '#111827' }}>#{transaction.id?.slice(-8).toUpperCase()}</span>
+                        </div>
+                        {transaction.customerName && (
+                            <div>
+                                <span style={{ color: '#6b7280' }}>Cust:</span> <span style={{ fontWeight: '600', textTransform: 'capitalize' }}>{transaction.customerName}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Items Header */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '4fr 1fr 2fr 2fr', gap: '0.5rem', marginTop: '1rem', paddingBottom: '0.25rem', borderBottom: '1px solid #e5e7eb', fontSize: '0.7rem', fontWeight: '600', color: '#374151' }}>
+                        <span>ITEM</span>
+                        <span style={{ textAlign: 'center' }}>QTY</span>
+                        <span style={{ textAlign: 'right' }}>RATE</span>
+                        <span style={{ textAlign: 'right' }}>AMT</span>
+                    </div>
+
+                    {/* Items List */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        {(transaction.items || []).map((item, index) => (
+                            <div key={index} style={{ display: 'grid', gridTemplateColumns: '4fr 1fr 2fr 2fr', gap: '0.5rem', fontSize: '0.75rem' }}>
+                                <span style={{ fontWeight: '500', color: '#1f2937' }}>{item.name}</span>
+                                <span style={{ textAlign: 'center', color: '#4b5563' }}>{item.qty || item.quantity}</span>
+                                <span style={{ textAlign: 'right', color: '#4b5563' }}>{Number(item.price).toFixed(2)}</span>
+                                <span style={{ textAlign: 'right', fontWeight: '500', color: '#111827' }}>{Number(item.price * (item.qty || item.quantity)).toFixed(2)}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Totals Section */}
+                    <div style={{ borderTop: '1px dashed #e5e7eb', marginTop: '1rem', paddingTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: '700', color: '#111827' }}>
+                            <span>Total Amount</span>
+                            <span>₹{Number(transaction.totalValue || transaction.amount || 0).toFixed(2)}</span>
+                        </div>
+
+                        {/* show advance/balance if booking or partial payment */}
+                        {(transaction.payment?.balanceMethod || transaction.advancePaid > 0) && (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#15803d' }}>
+                                    <span>Advance Paid</span>
+                                    <span>- ₹{Number(transaction.payment?.advance || transaction.advancePaid || 0).toFixed(2)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: '600', color: '#b91c1c' }}>
+                                    <span>Balance Due</span>
+                                    <span>₹{Number(transaction.payment?.balance || transaction.balanceDue || 0).toFixed(2)}</span>
+                                </div>
+                            </>
+                        )}
+                    </div>
 
                     <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '600', color: '#374151' }}>
                         {bizName}
