@@ -187,23 +187,40 @@ const PublicInvoice = () => {
                                 <span style={{ textTransform: 'none', fontWeight: 'normal' }}>Order is subject to confirmation.</span>
                             </>
                         ) : (
-                            bizFooter
+                            <div style={{ lineHeight: '1.4' }}>
+                                {bizFooter}<br />
+                                NO RETURN • NO REFUND • NO EXCHANGE
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
-        </div>
 
-            {/* EXPICIT SPACER to clear Fixed Footer */ }
+            {/* EXPICIT SPACER to clear Fixed Footer */}
             <div style={{ width: '100%', height: '180px', flexShrink: 0 }}></div>
 
             <div className="app-footer">
-                <a href={bizMapLink} target="_blank" rel="noreferrer" className="share-btn" style={{ textDecoration: 'none', background: '#374151', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <MapPin size={18} fill="#fca5a5" color="#ef4444" />
-                    <span style={{ color: 'white' }}>LOCATE / RATE US</span>
+                <a href={bizMapLink} target="_blank" rel="noreferrer" className="share-btn" style={{
+                    textDecoration: 'none',
+                    background: '#374151',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '0.75rem',
+                    padding: '1rem',
+                    width: '100%',
+                    maxWidth: '400px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    color: 'white',
+                    fontWeight: '600',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                }}>
+                    <Star size={20} fill="#fbbf24" color="#fbbf24" />
+                    <span>RATE US ON GOOGLE</span>
                 </a>
             </div>
-        </div >
+        </div>
     );
 };
 
