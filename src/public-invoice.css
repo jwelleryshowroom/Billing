@@ -31,43 +31,41 @@
 }
 
 /* Jagged Edge Generator using CSS radial-gradient */
-.jagged-edge {
-    position: absolute;
-    left: 0;
-    bottom: -10px;
-    /* Height of the jagged edge */
-    width: 100%;
-    height: 10px;
-    background-color: transparent;
-    background-image: radial-gradient(circle, transparent 70%, #1a202c 75%);
-    /* Dark circles to cut out white */
-    background-size: 20px 20px;
-    /* Size of the teeth (20px width) */
-    background-position: center bottom;
-    background-repeat: repeat-x;
-    /* Since the background is dark, we need the "teeth" to be the dark background "biting" into the white card */
-    /* Wait, better approach: The card is white. We want white teeth pointing down. */
-}
-
-/* Better Jagged Edge using mask (Modern browsers) or clip-path */
+/* Jagged Edge Generator using mask-image for sharp vector-like quality */
 .receipt-card::after {
     content: "";
     position: absolute;
     left: 0;
-    bottom: -10px;
+    bottom: -12px;
     width: 100%;
-    height: 10px;
+    height: 12px;
     background-color: white;
-    -webkit-mask-image: linear-gradient(to top, transparent 0%, black 100%),
-        linear-gradient(to right, transparent 50%, black 50%),
-        radial-gradient(circle at bottom, transparent 6px, black 7px);
-    /* Let's use a simpler Linear Gradient Sawtooth pattern */
+    -webkit-mask-image: radial-gradient(circle at 10px 0, transparent 0, transparent 10px, black 11px);
+    -webkit-mask-size: 20px 15px;
+    /* Actually a simple sawtooth linear gradient is best for the "receipt" look */
     background:
-        linear-gradient(-45deg, transparent 75%, white 75%) 0 0,
-        linear-gradient(45deg, transparent 75%, white 75%) 0 0;
+        linear-gradient(-45deg, transparent 10px, white 10px),
+        linear-gradient(45deg, transparent 10px, white 10px);
+    background-size: 20px 20px;
     background-repeat: repeat-x;
-    background-size: 15px 15px;
-    /* Width of each tooth */
-    background-position: 0 100%;
-    /* Align to bottom */
+    background-position: left bottom;
+    /* Override the mask approach with a direct background approach which is more reliable across browsers for this specific shape */
+    background: white;
+    -webkit-mask-image: linear-gradient(to bottom right, transparent 50%, black 0), linear-gradient(to bottom left, transparent 50%, black 0);
+    -webkit-mask-size: 20px 20px;
+    -webkit-mask-repeat: repeat-x;
+    -webkit-mask-position: left bottom;
+    mask-image: linear-gradient(to bottom right, transparent 50%, black 0), linear-gradient(to bottom left, transparent 50%, black 0);
+    mask-size: 20px 20px;
+    mask-repeat: repeat-x;
+    mask-position: left bottom;
+}
+
+/* Ensure footer button looks premium */
+.share-btn {
+    transition: all 0.2s ease;
+}
+
+.share-btn:active {
+    transform: scale(0.98);
 }
