@@ -273,7 +273,6 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                     <div style={{ textAlign: 'center', marginTop: '5px' }}>
                         <div style={{ fontWeight: 'bold' }}>* PLEASE BRING THIS SLIP *</div>
                         <div style={{ fontSize: '11px' }}>Order is subject to confirmation.</div>
-                        <div style={{ fontSize: '11px' }}>Ph: 8294556416</div>
                     </div>
                     <div>{SEPARATOR}</div>
                 </>

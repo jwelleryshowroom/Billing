@@ -132,6 +132,7 @@ const AppContent = () => {
       <Routes>
         {/* Public Route - Lazy Loaded */}
         <Route path="/view/:orderId" element={<PublicInvoice />} />
+        <Route path="/view/:businessId/:orderId" element={<PublicInvoice />} />
 
         {/* Protected Routes */}
         <Route path="/*" element={<ProtectedApp />} />
