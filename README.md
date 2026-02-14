@@ -1,4 +1,4 @@
-# React + Vite
+# React + Vite ![Build Status](https://github.com/jwelleryshowroom/Billing/actions/workflows/firebase-hosting-merge.yml/badge.svg)
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
