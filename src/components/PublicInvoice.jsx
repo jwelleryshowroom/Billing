@@ -146,12 +146,14 @@ const PublicInvoice = () => {
 
                 {/* Items List */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '4fr 1fr 2fr 2fr', gap: '0.5rem', fontSize: '0.75rem' }}>
-                        <span style={{ fontWeight: '500', color: '#1f2937' }}>{item.name}</span>
-                        <span style={{ textAlign: 'center', color: '#4b5563' }}>{item.qty || item.quantity}</span>
-                        <span style={{ textAlign: 'right', color: '#4b5563' }}>{Number(item.price).toFixed(2)}</span>
-                        <span style={{ textAlign: 'right', fontWeight: '500', color: '#111827' }}>{Number(item.price * (item.qty || item.quantity)).toFixed(2)}</span>
-                    </div>
+                    {(transaction.items || []).map((item, index) => (
+                        <div key={index} style={{ display: 'grid', gridTemplateColumns: '4fr 1fr 2fr 2fr', gap: '0.5rem', fontSize: '0.75rem' }}>
+                            <span style={{ fontWeight: '500', color: '#1f2937' }}>{item.name}</span>
+                            <span style={{ textAlign: 'center', color: '#4b5563' }}>{item.qty || item.quantity}</span>
+                            <span style={{ textAlign: 'right', color: '#4b5563' }}>{Number(item.price).toFixed(2)}</span>
+                            <span style={{ textAlign: 'right', fontWeight: '500', color: '#111827' }}>{Number(item.price * (item.qty || item.quantity)).toFixed(2)}</span>
+                        </div>
+                    ))}
                 </div>
 
                 {/* Totals Section */}
