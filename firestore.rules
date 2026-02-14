@@ -131,5 +131,9 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow read: if isSuperAdmin();
     }
+    // 8. Collection Group: Transactions (Public access to individual shared invoices)
+    match /{path=**}/transactions/{tId} {
+      allow get: if true;
+    }
   }
 }
