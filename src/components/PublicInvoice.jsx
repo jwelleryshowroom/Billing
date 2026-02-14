@@ -89,43 +89,56 @@ const PublicInvoice = () => {
 
     const bizName = businessProfile?.name || 'Pihu Ki Bakery';
     const bizAddress = businessProfile?.address || 'Kishanganj, Bihar';
-    const bizPhone = businessProfile?.phone || '';
+    // Format phone with +91 if missing
+    let bizPhone = businessProfile?.phone || '';
+    if (bizPhone && !bizPhone.startsWith('+')) {
+        bizPhone = `+91 ${bizPhone}`;
+    }
     const bizFooter = businessProfile?.footer || 'Thank you for visiting!';
-    const isBooking = transaction.type === 'ORDER_BOOKING';
+
+    // Check if it's an order/booking (not yet completed/delivered or explicitly typed as booking)
+    const isBooking = transaction.type === 'ORDER_BOOKING' || (transaction.type === 'order' && transaction.status !== 'completed' && transaction.status !== 'delivered');
 
     return (
         <div className="invoice-container">
-            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#e2e8f0', fontWeight: '600', letterSpacing: '1px' }}>
-                <ChefHat size={24} strokeWidth={1.5} />
-                <span style={{ textTransform: 'uppercase', letterSpacing: '2px' }}>{isBooking ? 'BOOKING RECEIPT' : 'TAX INVOICE'}</span>
+            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#e2e8f0', fontWeight: '700', letterSpacing: '1.5px' }}>
+                <ChefHat size={22} strokeWidth={2} />
+                <span style={{ textTransform: 'uppercase', fontSize: '0.9rem' }}>{isBooking ? 'BOOKING RECEIPT' : 'TAX INVOICE'}</span>
             </div>
 
             <div className="receipt-card">
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <h1 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '0.5rem', color: '#111827' }}>{bizName}</h1>
-                    <div style={{ fontSize: '0.85rem', color: '#4b5563', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{bizAddress}</div>
-                    {bizPhone && <div style={{ fontSize: '0.85rem', color: '#4b5563', marginTop: '4px' }}>{bizPhone}</div>}
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.4rem', color: '#111827', letterSpacing: '-0.02em' }}>{bizName}</h1>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: '1.5', maxWidth: '90%', margin: '0 auto', whiteSpace: 'pre-wrap' }}>
+                        {bizAddress}
+                    </div>
+                    {bizPhone && (
+                        <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#374151', marginTop: '6px' }}>
+                            {bizPhone}
+                        </div>
+                    )}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' }}>
                     <span>Order Details</span>
                     <span>Date</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', fontSize: '1rem', fontWeight: '700', color: '#111827' }}>
-                    <span style={{ fontFamily: 'monospace' }}>#{String(transaction.id || orderId).slice(-6).toUpperCase()}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', fontSize: '0.95rem', fontWeight: '800', color: '#111827' }}>
+                    <span style={{ fontFamily: 'monospace', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>#{String(transaction.id || orderId).slice(-6).toUpperCase()}</span>
                     <span>{transaction.date ? new Date(transaction.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
                 </div>
 
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 40px 60px 80px',
+                    gridTemplateColumns: 'minmax(100px, 1fr) 40px 60px 80px',
                     paddingBottom: '0.75rem',
-                    borderBottom: '2px dashed #e5e7eb',
-                    fontSize: '0.7rem',
+                    borderBottom: '2px dashed #f3f4f6',
+                    fontSize: '0.65rem',
                     fontWeight: '800',
                     color: '#9ca3af',
                     textTransform: 'uppercase',
-                    marginBottom: '1rem'
+                    marginBottom: '1rem',
+                    letterSpacing: '0.05em'
                 }}>
                     <span>Item</span>
                     <span style={{ textAlign: 'center' }}>Qty</span>
@@ -133,15 +146,15 @@ const PublicInvoice = () => {
                     <span style={{ textAlign: 'right' }}>Total</span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {(transaction.items || []).map((item, index) => {
                         const qty = item.qty || item.quantity || 1;
                         const price = Number(item.price || 0);
                         const total = price * qty;
                         return (
-                            <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 40px 60px 80px', gap: '4px', fontSize: '0.8rem', alignItems: 'start' }}>
-                                <span style={{ fontWeight: '700', color: '#111827' }}>{item.name}</span>
-                                <span style={{ textAlign: 'center', color: '#4b5563' }}>{qty}</span>
+                            <div key={index} style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) 40px 60px 80px', gap: '4px', fontSize: '0.85rem', alignItems: 'start' }}>
+                                <span style={{ fontWeight: '700', color: '#111827', textAlign: 'left' }}>{item.name}</span>
+                                <span style={{ textAlign: 'center', color: '#4b5563', fontWeight: '500' }}>{qty}</span>
                                 <span style={{ textAlign: 'right', color: '#4b5563' }}>{price.toFixed(2)}</span>
                                 <span style={{ textAlign: 'right', fontWeight: '800', color: '#111827' }}>{total.toFixed(2)}</span>
                             </div>
@@ -150,36 +163,44 @@ const PublicInvoice = () => {
                 </div>
 
                 <div style={{ borderTop: '1px dashed #e5e7eb', marginTop: '1.5rem', paddingTop: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '800', color: '#111827' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '900', color: '#111827' }}>
                         <span>Total Amount</span>
                         <span>₹{Number(transaction.totalValue || transaction.amount || 0).toFixed(2)}</span>
                     </div>
 
-                    {(transaction.advancePaid > 0 || transaction.payment?.advance > 0) && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#15803d', marginTop: '0.5rem' }}>
+                    {(transaction.advancePaid > 0 || (transaction.payment?.advance > 0)) && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: '600', color: '#16a34a', marginTop: '0.6rem' }}>
                             <span>Advance Paid</span>
                             <span>- ₹{Number(transaction.payment?.advance || transaction.advancePaid).toFixed(2)}</span>
                         </div>
                     )}
-                    {(transaction.balanceDue > 0 || transaction.payment?.balance > 0) && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: '800', color: '#b91c1c', marginTop: '0.5rem' }}>
+                    {(transaction.balanceDue > 0 || (transaction.payment?.balance > 0)) && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', fontWeight: '900', color: '#dc2626', marginTop: '0.4rem' }}>
                             <span>Balance Due</span>
                             <span>₹{Number(transaction.payment?.balance || transaction.balanceDue).toFixed(2)}</span>
                         </div>
                     )}
                 </div>
 
-                <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#111827' }}>{bizName}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '4px', lineHeight: '1.4' }}>
+                <div style={{ marginTop: '2.5rem', textAlign: 'center', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#111827', marginBottom: '4px' }}>{bizName}</div>
+
+                    {isBooking && (
+                        <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#111827', letterSpacing: '0.5px' }}>* PLEASE BRING THIS SLIP *</div>
+                            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '2px' }}>Order is subject to confirmation.</div>
+                        </div>
+                    )}
+
+                    <div style={{ fontSize: '0.7rem', color: '#9ca3af', lineHeight: '1.6' }}>
                         {bizFooter}<br />
-                        NO RETURN • NO REFUND • NO EXCHANGE
+                        <span style={{ fontWeight: '600', letterSpacing: '0.5px' }}>NO RETURN • NO REFUND • NO EXCHANGE</span>
                     </div>
                 </div>
             </div>
 
             <div className="app-footer">
-                <button className="share-btn" style={{
+                <button className="share-btn" onClick={() => window.open('https://g.page/r/your-google-review-link', '_blank')} style={{
                     background: '#374151',
                     border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '0.75rem',
@@ -190,7 +211,8 @@ const PublicInvoice = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
                 }}>
                     <Star size={20} fill="#fbbf24" color="#fbbf24" />
                     <span>RATE US ON GOOGLE</span>
@@ -198,7 +220,7 @@ const PublicInvoice = () => {
             </div>
 
             <div style={{ position: 'fixed', bottom: '2px', right: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>
-                v2.3.0
+                v2.4.0
             </div>
         </div>
     );

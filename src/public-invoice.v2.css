@@ -8,8 +8,11 @@
     flex-direction: column;
     align-items: center;
     padding: 1rem;
-    padding-bottom: 8rem;
-    /* Space for fixed footer */
+    padding-top: 2rem;
+    padding-bottom: 9rem;
+    /* Extra space for footer and scrolling */
+    overflow-y: auto;
+    overflow-x: hidden;
     font-family: 'Outfit', sans-serif;
     color: #fff;
 }
@@ -19,6 +22,7 @@
     max-width: 400px;
     background-color: white;
     color: #1f2937;
+    text-align: center;
     /* Tailwind gray-800 */
     margin-top: 1rem;
     position: relative;
