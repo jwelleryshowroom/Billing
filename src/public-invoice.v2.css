@@ -9,7 +9,8 @@
     align-items: center;
     padding: 1rem;
     padding-top: 2rem;
-    padding-bottom: 2rem;
+    padding-bottom: 10rem;
+    /* Give plenty of space to clear the fixed footer */
     /* Use 100dvh for mobile viewport reliability */
     height: 100dvh;
     overflow-y: auto;

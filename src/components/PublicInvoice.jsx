@@ -202,8 +202,13 @@ const PublicInvoice = () => {
                     )}
 
                     <div style={{ fontSize: '0.7rem', color: '#9ca3af', lineHeight: '1.6' }}>
-                        {bizFooter}<br />
-                        <span style={{ fontWeight: '600', letterSpacing: '0.5px' }}>NO RETURN • NO REFUND • NO EXCHANGE</span>
+                        {bizFooter}
+                        {!isBooking && (
+                            <>
+                                <br />
+                                <span style={{ fontWeight: '600', letterSpacing: '0.5px' }}>NO RETURN • NO REFUND • NO EXCHANGE</span>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -229,7 +234,7 @@ const PublicInvoice = () => {
             </div>
 
             <div style={{ position: 'fixed', bottom: '2px', right: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>
-                v2.5.0
+                v2.6.0
             </div>
         </div>
     );
