@@ -275,7 +275,7 @@ const SettingsDrawer = () => {
                                 {/* Footer */}
                                 <div style={{ textAlign: 'center', marginTop: '40px' }}>
                                     <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{businessName}</div>
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>v1.8.6 • Enterprise Platform</div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>v1.9.0 • Enterprise Platform</div>
                                 </div>
                             </motion.div>
                         )}

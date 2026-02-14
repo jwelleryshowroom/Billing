@@ -220,6 +220,15 @@ const PublicInvoice = () => {
                     <span>RATE US ON GOOGLE</span>
                 </a>
             </div>
+
+            {/* Version Indicator for Debugging */}
+            <div style={{
+                position: 'fixed', bottom: '2px', right: '5px',
+                fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)',
+                zIndex: 60, pointerEvents: 'none'
+            }}>
+                v1.9.0
+            </div>
         </div>
     );
 };
