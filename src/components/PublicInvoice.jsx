@@ -3,13 +3,13 @@ import { useParams } from 'react-router-dom';
 import { collection, doc, getDoc, collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getCollectionRef } from '../utils/dataService';
-import { Loader2, AlertCircle, Phone, Share2, ChefHat, MapPin, Star } from 'lucide-react';
+import { Loader2, AlertCircle, ChefHat, Star } from 'lucide-react';
 import '../public-invoice.v2.css';
 
 const PublicInvoice = () => {
     const { orderId, businessId } = useParams();
     const [transaction, setTransaction] = useState(null);
-    const [businessProfile, setBusinessProfile] = useState(null); // [NEW]
+    const [businessProfile, setBusinessProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -18,8 +18,7 @@ const PublicInvoice = () => {
             try {
                 if (!orderId) throw new Error('No order ID provided');
 
-                // A. Fetch Business Profile First (if known)
-                let activeBusinessId = businessId;
+                // A. Fetch Business Profile First
                 if (businessId) {
                     const bizRef = doc(db, 'businesses', businessId);
                     const bizSnap = await getDoc(bizRef);
@@ -30,21 +29,20 @@ const PublicInvoice = () => {
 
                 let data = null;
 
-                // 1. Try Hierarchical Path (Professional Structure)
+                // 1. Try Hierarchical Path (Standard)
                 if (businessId) {
                     const docRef = doc(getCollectionRef(businessId, 'transactions'), orderId);
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) data = { id: docSnap.id, ...docSnap.data() };
                 }
 
-                // 2. Try Legacy/Root Path if not found
+                // 2. Try Legacy/Root Path
                 if (!data) {
                     const legacyRef = doc(db, 'transactions', orderId);
                     const legacySnap = await getDoc(legacyRef);
                     if (legacySnap.exists()) {
                         data = { id: legacySnap.id, ...legacySnap.data() };
-                        // If we found data but didn't know businessId yet, try to fetch profile using data.businessId
-                        if (!activeBusinessId && data.businessId) {
+                        if (data.businessId) {
                             const bizRef = doc(db, 'businesses', data.businessId);
                             const bizSnap = await getDoc(bizRef);
                             if (bizSnap.exists()) setBusinessProfile(bizSnap.data());
@@ -52,18 +50,13 @@ const PublicInvoice = () => {
                     }
                 }
 
-                // 3. Fallback: Collection Group Search (requires index, but good as last resort)
+                // 3. Fallback: Search all transactions
                 if (!data) {
-                    const q = query(collectionGroup(db, 'transactions'), where('id', '==', orderId));
+                    // Try searching by the custom 'id' field if it's not the doc ID
+                    const q = query(collectionGroup(db, 'transactions'), where('orderId', '==', orderId));
                     const snap = await getDocs(q);
                     if (!snap.empty) {
                         data = { id: snap.docs[0].id, ...snap.docs[0].data() };
-                        // Try to fetch profile using found businessId
-                        if (!activeBusinessId && data.businessId) {
-                            const bizRef = doc(db, 'businesses', data.businessId);
-                            const bizSnap = await getDoc(bizRef);
-                            if (bizSnap.exists()) setBusinessProfile(bizSnap.data());
-                        }
                     }
                 }
 
@@ -82,74 +75,58 @@ const PublicInvoice = () => {
         fetchData();
     }, [orderId, businessId]);
 
-    // ... (rest of the file)
-
-    // Helper to get fallback or dynamic values
-    const bizName = businessProfile?.name || 'The Classic Confection'; // Fallback for legacy
-    const bizAddress = businessProfile?.address || 'Mahavir Marg, opp. Hotel Shyam Palace\nGandhi Chowk, Kishanganj, Bihar 855108';
-    const bizPhone = businessProfile?.phone || '+91 82945 56416';
-    const bizFooter = businessProfile?.footer || 'Thank you for visiting!';
-    const bizMapLink = businessProfile?.mapLink || 'https://maps.app.goo.gl/83qhC3mrtegUR7XM6'; // Default fallback
-
-    const isBooking = transaction?.type === 'ORDER_BOOKING';
-
     if (loading) return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <Loader2 className="animate-spin" size={32} />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a202c' }}>
+            <Loader2 className="animate-spin" size={32} color="white" />
         </div>
     );
 
-    if (error) return (
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '1rem' }}>
-            <AlertCircle size={48} color="red" />
-            <p>{error}</p>
+    if (error || !transaction) return (
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '1rem', background: '#1a202c', color: 'white' }}>
+            <AlertCircle size={48} color="#ef4444" />
+            <p>{error || 'Something went wrong'}</p>
         </div>
     );
+
+    const bizName = businessProfile?.name || 'Pihu Ki Bakery';
+    const bizAddress = businessProfile?.address || 'Kishanganj, Bihar';
+    const bizPhone = businessProfile?.phone || '';
+    const bizFooter = businessProfile?.footer || 'Thank you for visiting!';
+    const isBooking = transaction.type === 'ORDER_BOOKING';
 
     return (
         <div className="invoice-container">
-            {/* Header Icon & Title */}
-            <div className="app-header" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#e2e8f0', fontWeight: '600', letterSpacing: '1px', fontSize: '1rem' }}>
+            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#e2e8f0', fontWeight: '600', letterSpacing: '1px' }}>
                 <ChefHat size={24} strokeWidth={1.5} />
                 <span style={{ textTransform: 'uppercase', letterSpacing: '2px' }}>{isBooking ? 'BOOKING RECEIPT' : 'TAX INVOICE'}</span>
             </div>
 
-            {/* The Receipt Card */}
             <div className="receipt-card">
-                {/* 1. Header Section */}
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem', fontFamily: '"Outfit", sans-serif', letterSpacing: '-0.5px', color: '#111827' }}>{bizName}</h1>
-                    <div style={{ fontSize: '0.8rem', color: '#4b5563', lineHeight: '1.5', whiteSpace: 'pre-wrap', maxWidth: '80%', margin: '0 auto' }}>
-                        {bizAddress}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#4b5563', marginTop: '4px' }}>
-                        {bizPhone}
-                    </div>
+                    <h1 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '0.5rem', color: '#111827' }}>{bizName}</h1>
+                    <div style={{ fontSize: '0.85rem', color: '#4b5563', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{bizAddress}</div>
+                    {bizPhone && <div style={{ fontSize: '0.85rem', color: '#4b5563', marginTop: '4px' }}>{bizPhone}</div>}
                 </div>
 
-                {/* 2. Meta Data Rows - Swapped ORDER DETAILS (Left) and DATE (Right) */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem', fontSize: '0.7rem', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '4px' }}>
                     <span>Order Details</span>
                     <span>Date</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', fontSize: '1rem', fontWeight: '600', color: '#1f2937' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>#{transaction.id?.slice(-6).toUpperCase()}</span>
-                    <span>{transaction.date ? new Date(transaction.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', fontSize: '1rem', fontWeight: '700', color: '#111827' }}>
+                    <span style={{ fontFamily: 'monospace' }}>#{String(transaction.id || orderId).slice(-6).toUpperCase()}</span>
+                    <span>{transaction.date ? new Date(transaction.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
                 </div>
 
-                {/* 3. Items Header */}
-                {/* 3. Items Header - Detailed Columns */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(100px, 1fr) 40px 60px 80px',
+                    gridTemplateColumns: '1fr 40px 60px 80px',
                     paddingBottom: '0.75rem',
                     borderBottom: '2px dashed #e5e7eb',
                     fontSize: '0.7rem',
-                    fontWeight: '700',
+                    fontWeight: '800',
                     color: '#9ca3af',
                     textTransform: 'uppercase',
-                    marginBottom: '1rem',
-                    letterSpacing: '0.05em'
+                    marginBottom: '1rem'
                 }}>
                     <span>Item</span>
                     <span style={{ textAlign: 'center' }}>Qty</span>
@@ -157,101 +134,72 @@ const PublicInvoice = () => {
                     <span style={{ textAlign: 'right' }}>Total</span>
                 </div>
 
-                {/* Items List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                     {(transaction.items || []).map((item, index) => {
                         const qty = item.qty || item.quantity || 1;
                         const price = Number(item.price || 0);
                         const total = price * qty;
-
                         return (
-                            <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                    <span style={{ fontWeight: '700', color: '#111827', fontSize: '0.85rem', flex: 1 }}>{item.name}</span>
-                                    <span style={{ fontWeight: '700', color: '#111827', fontSize: '0.85rem', marginLeft: '1rem' }}>₹{total.toFixed(2)}</span>
-                                </div>
-                                {qty > 1 && (
-                                    <div style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: '500' }}>
-                                        {qty} x ₹{price.toFixed(2)}
-                                    </div>
-                                )}
+                            <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 40px 60px 80px', gap: '4px', fontSize: '0.8rem', alignItems: 'start' }}>
+                                <span style={{ fontWeight: '700', color: '#111827' }}>{item.name}</span>
+                                <span style={{ textAlign: 'center', color: '#4b5563' }}>{qty}</span>
+                                <span style={{ textAlign: 'right', color: '#4b5563' }}>{price.toFixed(2)}</span>
+                                <span style={{ textAlign: 'right', fontWeight: '800', color: '#111827' }}>{total.toFixed(2)}</span>
                             </div>
                         );
                     })}
                 </div>
 
-                {/* Totals Section */}
-                <div style={{ borderTop: '1px dashed #e5e7eb', marginTop: '1rem', paddingTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: '700', color: '#111827' }}>
+                <div style={{ borderTop: '1px dashed #e5e7eb', marginTop: '1.5rem', paddingTop: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '800', color: '#111827' }}>
                         <span>Total Amount</span>
                         <span>₹{Number(transaction.totalValue || transaction.amount || 0).toFixed(2)}</span>
                     </div>
 
-                    {/* show advance/balance if booking or partial payment */}
-                    {(transaction.payment?.balanceMethod || transaction.advancePaid > 0) && (
-                        <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#15803d' }}>
-                                <span>Advance Paid</span>
-                                <span>- ₹{Number(transaction.payment?.advance || transaction.advancePaid || 0).toFixed(2)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: '600', color: '#b91c1c' }}>
-                                <span>Balance Due</span>
-                                <span>₹{Number(transaction.payment?.balance || transaction.balanceDue || 0).toFixed(2)}</span>
-                            </div>
-                        </>
+                    {(transaction.advancePaid > 0 || transaction.payment?.advance > 0) && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#15803d', marginTop: '0.5rem' }}>
+                            <span>Advance Paid</span>
+                            <span>- ₹{Number(transaction.payment?.advance || transaction.advancePaid).toFixed(2)}</span>
+                        </div>
+                    )}
+                    {(transaction.balanceDue > 0 || transaction.payment?.balance > 0) && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: '800', color: '#b91c1c', marginTop: '0.5rem' }}>
+                            <span>Balance Due</span>
+                            <span>₹{Number(transaction.payment?.balance || transaction.balanceDue).toFixed(2)}</span>
+                        </div>
                     )}
                 </div>
 
-                <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '600', color: '#374151' }}>
-                    {bizName}
-                    <div style={{ fontWeight: '500', color: '#9ca3af', fontSize: '0.65rem', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        {isBooking ? (
-                            <>
-                                * PLEASE BRING THIS SLIP *<br />
-                                <span style={{ textTransform: 'none', fontWeight: 'normal' }}>Order is subject to confirmation.</span>
-                            </>
-                        ) : (
-                            <div style={{ lineHeight: '1.4' }}>
-                                {bizFooter}<br />
-                                NO RETURN • NO REFUND • NO EXCHANGE
-                            </div>
-                        )}
+                <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#111827' }}>{bizName}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '4px', lineHeight: '1.4' }}>
+                        {bizFooter}<br />
+                        NO RETURN • NO REFUND • NO EXCHANGE
                     </div>
                 </div>
             </div>
 
-            {/* EXPICIT SPACER to clear Fixed Footer */}
-            <div style={{ width: '100%', height: '180px', flexShrink: 0 }}></div>
-
             <div className="app-footer">
-                <a href={bizMapLink} target="_blank" rel="noreferrer" className="share-btn" style={{
-                    textDecoration: 'none',
+                <button className="share-btn" style={{
                     background: '#374151',
                     border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '0.75rem',
                     padding: '1rem',
-                    width: '100%',
-                    maxWidth: '400px',
+                    color: 'white',
+                    fontWeight: '700',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.5rem',
-                    color: 'white',
-                    fontWeight: '600',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    gap: '8px',
+                    cursor: 'pointer'
                 }}>
                     <Star size={20} fill="#fbbf24" color="#fbbf24" />
                     <span>RATE US ON GOOGLE</span>
-                </a>
+                </button>
             </div>
 
-            {/* Version Indicator for Debugging */}
-            <div style={{
-                position: 'fixed', bottom: '2px', right: '5px',
-                fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)',
-                zIndex: 60, pointerEvents: 'none'
-            }}>
-                v1.9.0
+            <div style={{ position: 'fixed', bottom: '2px', right: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>
+                v2.1.0
             </div>
         </div>
     );
