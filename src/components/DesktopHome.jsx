@@ -12,8 +12,12 @@ import { triggerHaptic } from '../utils/haptics';
 import { useOrderFilters } from '../features/orders/hooks/useOrderFilters';
 
 const DesktopHome = ({ setCurrentView }) => {
-    const { transactions, deleteTransaction } = useTransactions();
-    const { items: inventoryItems } = useInventory();
+    const transactionsContext = useTransactions();
+    const transactions = transactionsContext?.transactions || [];
+    const deleteTransaction = transactionsContext?.deleteTransaction || (() => { });
+
+    const inventoryContext = useInventory();
+    const inventoryItems = inventoryContext?.items || [];
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const navigate = useNavigate();
