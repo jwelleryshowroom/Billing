@@ -138,20 +138,38 @@ const PublicInvoice = () => {
                 </div>
 
                 {/* 3. Items Header */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'auto 3rem 4rem', paddingBottom: '0.75rem', borderBottom: '2px dashed #e5e7eb', fontSize: '0.75rem', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.05em' }}>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 3rem 4rem 5rem',
+                    paddingBottom: '0.75rem',
+                    borderBottom: '2px dashed #e5e7eb',
+                    fontSize: '0.7rem',
+                    fontWeight: '700',
+                    color: '#9ca3af',
+                    textTransform: 'uppercase',
+                    marginBottom: '1rem',
+                    letterSpacing: '0.05em'
+                }}>
                     <span>Item</span>
                     <span style={{ textAlign: 'center' }}>Qty</span>
-                    <span style={{ textAlign: 'right' }}>Price</span>
+                    <span style={{ textAlign: 'right' }}>Rate</span>
+                    <span style={{ textAlign: 'right' }}>Total</span>
                 </div>
 
                 {/* Items List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '0.5rem' }}>
                     {(transaction.items || []).map((item, index) => (
-                        <div key={index} style={{ display: 'grid', gridTemplateColumns: '4fr 1fr 2fr 2fr', gap: '0.5rem', fontSize: '0.75rem' }}>
-                            <span style={{ fontWeight: '500', color: '#1f2937' }}>{item.name}</span>
+                        <div key={index} style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 3rem 4rem 5rem',
+                            gap: '4px',
+                            fontSize: '0.75rem',
+                            alignItems: 'start'
+                        }}>
+                            <span style={{ fontWeight: '600', color: '#111827', lineHeight: '1.2' }}>{item.name}</span>
                             <span style={{ textAlign: 'center', color: '#4b5563' }}>{item.qty || item.quantity}</span>
-                            <span style={{ textAlign: 'right', color: '#4b5563' }}>{Number(item.price).toFixed(2)}</span>
-                            <span style={{ textAlign: 'right', fontWeight: '500', color: '#111827' }}>{Number(item.price * (item.qty || item.quantity)).toFixed(2)}</span>
+                            <span style={{ textAlign: 'right', color: '#9ca3af', fontSize: '0.7rem' }}>{Number(item.price).toFixed(2)}</span>
+                            <span style={{ textAlign: 'right', fontWeight: '700', color: '#111827' }}>{Number(item.price * (item.qty || item.quantity)).toFixed(2)}</span>
                         </div>
                     ))}
                 </div>
