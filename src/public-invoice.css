@@ -1,0 +1,73 @@
+/* PUBLIC INVOICE Styles */
+.invoice-container {
+    min-height: 100vh;
+    width: 100vw;
+    background-color: #1a202c;
+    /* Tailwind gray-900 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    padding-bottom: 8rem;
+    /* Space for fixed footer */
+    font-family: 'Outfit', sans-serif;
+    color: #fff;
+}
+
+.receipt-card {
+    width: 100%;
+    max-width: 380px;
+    background-color: white;
+    color: #1f2937;
+    /* Tailwind gray-800 */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    margin-top: 1rem;
+    position: relative;
+    /* Remove border radius bottom to let jagged edge work seamlessly */
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    padding: 2rem 1.5rem 2rem 1.5rem;
+    /* Increased bottom padding */
+}
+
+/* Jagged Edge Generator using CSS radial-gradient */
+.jagged-edge {
+    position: absolute;
+    left: 0;
+    bottom: -10px;
+    /* Height of the jagged edge */
+    width: 100%;
+    height: 10px;
+    background-color: transparent;
+    background-image: radial-gradient(circle, transparent 70%, #1a202c 75%);
+    /* Dark circles to cut out white */
+    background-size: 20px 20px;
+    /* Size of the teeth (20px width) */
+    background-position: center bottom;
+    background-repeat: repeat-x;
+    /* Since the background is dark, we need the "teeth" to be the dark background "biting" into the white card */
+    /* Wait, better approach: The card is white. We want white teeth pointing down. */
+}
+
+/* Better Jagged Edge using mask (Modern browsers) or clip-path */
+.receipt-card::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -10px;
+    width: 100%;
+    height: 10px;
+    background-color: white;
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, black 100%),
+        linear-gradient(to right, transparent 50%, black 50%),
+        radial-gradient(circle at bottom, transparent 6px, black 7px);
+    /* Let's use a simpler Linear Gradient Sawtooth pattern */
+    background:
+        linear-gradient(-45deg, transparent 75%, white 75%) 0 0,
+        linear-gradient(45deg, transparent 75%, white 75%) 0 0;
+    background-repeat: repeat-x;
+    background-size: 15px 15px;
+    /* Width of each tooth */
+    background-position: 0 100%;
+    /* Align to bottom */
+}
