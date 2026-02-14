@@ -113,7 +113,7 @@ const PublicInvoice = () => {
                         fontSize: '0.75rem',
                         color: '#6b7280',
                         lineHeight: '1.3',
-                        maxWidth: '280px',
+                        maxWidth: '240px',
                         margin: '0 auto',
                         textAlign: 'center',
                         textWrap: 'balance',
@@ -239,7 +239,7 @@ const PublicInvoice = () => {
             </div>
 
             <div style={{ position: 'fixed', bottom: '2px', right: '5px', fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)' }}>
-                v2.7.0
+                v2.8.0
             </div>
         </div>
     );

@@ -19,29 +19,54 @@
     /* Smooth scroll on iOS */
     font-family: 'Outfit', sans-serif;
     color: #fff;
+    scroll-behavior: smooth;
+    scroll-padding-top: 1rem;
 }
 
 .receipt-card {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     background-color: white;
     color: #1f2937;
     text-align: center;
-    /* Tailwind gray-800 */
     margin-top: 1rem;
     position: relative;
-    /* Remove standard box-shadow as we use filter: drop-shadow for mask compatibility */
-    filter: drop-shadow(0 20px 25px rgba(0, 0, 0, 0.2));
-    padding: 2.5rem 1.5rem 3.5rem 1.5rem;
+    filter: drop-shadow(0 15px 20px rgba(0, 0, 0, 0.25));
+    padding: 2.5rem 1.5rem 4rem 1.5rem;
+    /* Extra bottom padding for jagged edge visibility */
 
     /* Jagged Edge using Masking */
-    --mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 90deg, #0000 91deg) 50% / 20px 100% repeat-x;
+    --mask-size: 20px;
+    --mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 90deg, #0000 91deg) 50% / var(--mask-size) 100% repeat-x;
     -webkit-mask: var(--mask);
     mask: var(--mask);
 }
 
-/* Redundant pseudo-element removed */
+/* MOBILE OPTIMIZATIONS */
+@media screen and (max-width: 480px) {
+    .invoice-container {
+        padding: 0.5rem;
+        padding-top: 1.5rem;
+        padding-bottom: 8rem;
+    }
 
+    .receipt-card {
+        width: 95%;
+        max-width: none;
+        padding: 1.5rem 1rem 3.5rem 1rem;
+        --mask-size: 15px;
+        /* Sharper teeth on mobile */
+    }
+
+    .app-footer {
+        padding: 1rem;
+    }
+
+    .share-btn {
+        padding: 0.8rem !important;
+        font-size: 0.9rem;
+    }
+}
 
 /* Ensure footer button is fixed at the bottom */
 .app-footer {
@@ -53,16 +78,20 @@
     padding: 1.5rem;
     display: flex;
     justify-content: center;
-    background: linear-gradient(to top, #1a202c 90%, rgba(26, 32, 44, 0));
+    background: linear-gradient(to top, #1a202c 80%, rgba(26, 32, 44, 0));
     z-index: 50;
     backdrop-filter: blur(8px);
+    pointer-events: none;
+    /* Let clicks pass through outside button */
 }
 
 .share-btn {
+    pointer-events: auto;
+    /* Re-enable clicks for button */
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     max-width: 400px;
-    margin-bottom: env(safe-area-inset-bottom, 0px);
+    margin-bottom: env(safe-area-inset-bottom, 10px);
 }
 
 .share-btn:active {
