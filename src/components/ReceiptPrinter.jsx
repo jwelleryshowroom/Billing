@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Printer, Share2 } from 'lucide-react';
 
 import { useSettings } from '../context/SettingsContext';
+import PrintArea from './PrintArea';
 
 const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
     const isBooking = type === 'ORDER_BOOKING';
@@ -16,8 +17,15 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
     const padRight = (str, len) => str.padEnd(len, ' ').slice(0, len);
     const padLeft = (str, len) => str.padStart(len, ' ').slice(-len);
 
-    // The separator line
-    const SEPARATOR = '---------------------------------------';
+    // The separator line - CSS based for responsiveness (works on 58mm and 80mm)
+    const SeparatorLine = () => (
+        <div style={{
+            borderBottom: '1px dashed black',
+            margin: '5px 0',
+            width: '100%',
+            height: '1px'
+        }} />
+    );
 
     const Header = () => (
         <div style={{ textAlign: 'center' }}>
@@ -29,14 +37,14 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
 
     // Common Container Styles for the receipt paper itself
     const containerStyle = {
-        width: '100%', // Let parent control width
-        maxWidth: '80mm',
+        width: '100%',
+        maxWidth: '80mm', // Constraint for desktop, fully responsive for float
         fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         fontSize: '12px',
         lineHeight: '1.2',
         color: 'black',
         background: 'white',
-        padding: '10px',
+        padding: '5px 5px', // Minimal padding
         whiteSpace: 'pre-wrap',
         margin: '0 auto',
         // Shadow is now handled by the parent wrapper in PublicInvoice
@@ -44,113 +52,38 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
     };
 
     // Print CSS
+    // Simplified Print CSS - RELIES ON PARENT PrintArea TO HANDLE VISIBILITY
     const printStyle = `
         @media print {
-            @page { 
-                size: auto; 
-                margin: 0mm; 
-            }
-            
-            /* Global reset: Force everything to be visible and unclipped */
+            @page { size: auto; margin: 0mm; }
             html, body {
                 height: auto !important;
                 overflow: visible !important;
-                margin: 0 !important;
-                padding: 0 !important;
                 background: white !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-
-            /* Hide everything except the body's direct children (portals) */
-            #root, .no-print, .modal-overlay:not(.printing-active) { 
-                display: none !important; 
-            }
-
-            /* The SPECIFIC modal we want to print */
-            .modal-overlay.printing-active {
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                transform: none !important;
-                position: absolute !important;
-                inset: 0 !important;
-                background: white !important;
-                z-index: 999999 !important;
-                overflow: visible !important;
-            }
-
-            /* Ensure all parent containers of the receipt are visible and not clipped */
-            .printing-active .modal-content,
-            .printing-active .modal-body {
-                display: block !important;
-                visibility: visible !important;
-                position: relative !important;
-                width: 100% !important;
-                max-width: none !important;
-                height: auto !important;
-                border: none !important;
-                box-shadow: none !important;
-                background: white !important;
-                transform: none !important;
-                opacity: 1 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: visible !important;
-            }
-
-            /* Hide modal chrome: Header, Buttons, Success message, and confirm text */
-            .printing-active header,
-            .printing-active .modal-content > div:first-child,
-            .printing-active h2,
-            .printing-active button,
-            .printing-active .text-success,
-            .btn-print-now,
-            #printable-receipt-wrapper > *:not(#printable-receipt) {
-                display: none !important;
-            }
-
-            /* The actual printable receipt container */
-            #printable-receipt-wrapper {
-                display: block !important;
-                visibility: visible !important;
-                border: none !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                overflow: visible !important;
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-            }
-
-            #printable-receipt {
-                display: block !important;
-                visibility: visible !important;
-                width: 79mm !important;
-                margin: 0 auto !important;
-                padding: 5mm !important;
-                background: white !important;
-                color: black !important;
-                font-family: 'Courier New', monospace !important;
-                position: relative !important;
-                border: none !important;
-            }
-
-            /* Force all text inside receipt to be visible and black */
-            #printable-receipt * {
-                visibility: visible !important;
-                color: black !important;
-                background: transparent !important;
-                overflow: visible !important;
             }
             
-            #printable-receipt span, 
-            #printable-receipt div, 
-            #printable-receipt h1 {
+            /* Ensure the receipt itself is visible and styled correctly */
+            #printable-receipt {
+                width: 100% !important; /* Full width of the paper */
+                max-width: 100% !important; /* Allow filling small papers */
+                padding: 2px 2px !important; /* Absolute minimum padding for thermal */
+                margin: 0 !important; /* Let printer driver handle margins */
+                background: white !important;
+                /* Match the nice font stack from the preview */
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+                color: black !important;
+                font-size: 12px !important;
+                line-height: 1.2 !important;
+                white-space: pre-wrap !important;
+            }
+
+            /* Ensure all children are visible */
+            #printable-receipt * {
+                visibility: visible !important; 
                 color: black !important;
             }
+            
+            .no-print { display: none !important; }
         }
     `;
 
@@ -193,9 +126,9 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
             // 1. QUICK MODE (INVOICE)
             return (
                 <>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                     <Header />
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
 
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>INVOICE NO: #{transaction.id?.slice(-8).toUpperCase() || 'POS-8921'}</span>
@@ -213,7 +146,7 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                         </div>
                     )}
 
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                     {/* Header Row */}
                     <div style={{ display: 'grid', gridTemplateColumns: '18fr 6fr 9fr 9fr' }}>
                         <span>ITEM</span>
@@ -221,7 +154,7 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                         <span style={{ textAlign: 'right' }}>RATE</span>
                         <span style={{ textAlign: 'right' }}>AMT</span>
                     </div>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
 
                     {/* Items */}
                     {(transaction.items || []).map((item, i) => (
@@ -233,17 +166,17 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                         </div>
                     ))}
 
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                     <div>Total Qty: {(transaction.items || []).reduce((acc, i) => acc + (i.qty || i.quantity || 0), 0)}</div>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold' }}>
                         <span>GRAND TOTAL:</span>
                         <span>{formatCurrency(transaction.totalValue || transaction.amount)}</span>
                     </div>
 
-                    <div>{SEPARATOR}</div>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
+                    <SeparatorLine />
 
                     {transaction.payment?.balanceMethod ? (
                         <div style={{ fontSize: '12px' }}>
@@ -264,24 +197,24 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                         <div>Thank you for visiting!</div>
                         <div>Have a sweet day! 🧁</div>
                     </div>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                 </>
             );
         } else {
             // 2. ORDER MODE (BOOKING SLIP)
             return (
                 <>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                     <Header />
                     <div style={{ textAlign: 'center', fontWeight: 'bold', marginTop: '5px' }}>** ORDER BOOKING SLIP **</div>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
 
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>Ref: #{transaction.id?.slice(-6).toUpperCase() || 'BK-104'}</span>
                         <span>Date: {formatDate(transaction.date || transaction.createdAt)}</span>
                     </div>
 
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                     <div style={{ fontWeight: 'bold' }}>CUSTOMER DETAILS</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'min-content auto', gap: '10px' }}>
                         <span>Name:</span>
@@ -294,7 +227,7 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
 
 
 
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                     <div style={{ fontWeight: 'bold' }}>📦 DELIVERY DUE:</div>
                     <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
                         📅 {transaction.delivery ? format(new Date(transaction.delivery.date), 'dd-MMM-yyyy (EEEE)') :
@@ -307,9 +240,9 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                         </div>
                     ) : null}
 
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                     <div style={{ fontWeight: 'bold' }}>ITEM DETAILS</div>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
 
                     {(transaction.items || []).map((item, i) => (
                         <div key={i} style={{ marginBottom: '8px' }}>
@@ -324,54 +257,61 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                     {/* Special Instructions - MOVED HERE & INLINE */}
                     {(transaction.customer?.note || transaction.note) && (
                         <>
-                            <div>{SEPARATOR}</div>
+                            <SeparatorLine />
                             <div style={{ fontWeight: 'bold', fontSize: '13px' }}>
                                 NOTE: {transaction.customer?.note || transaction.note}
                             </div>
                         </>
                     )}
 
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>Total Amount:</span>
                         <span style={{ fontWeight: 'bold' }}>₹ {formatCurrency(transaction.totalValue || transaction.amount)}</span>
                     </div>
                     {!transaction.payment?.balanceMethod && (
                         <>
-                            <div>{SEPARATOR}</div>
+                            <SeparatorLine />
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span>ADVANCE PAID:</span>
                                 <span>₹ {formatCurrency(transaction.payment?.advance || transaction.advancePaid || 0)}</span>
                             </div>
-                            <div>{SEPARATOR}</div>
+                            <SeparatorLine />
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold' }}>
                                 <span>⚠️ BALANCE DUE:</span>
                                 <span>₹ {formatCurrency(transaction.payment?.balance || transaction.balanceDue || 0)}</span>
                             </div>
                         </>
                     )}
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
 
                     <div style={{ textAlign: 'center', marginTop: '5px' }}>
                         <div style={{ fontWeight: 'bold' }}>* PLEASE BRING THIS SLIP *</div>
                         <div style={{ fontSize: '11px' }}>Order is subject to confirmation.</div>
                     </div>
-                    <div>{SEPARATOR}</div>
+                    <SeparatorLine />
                 </>
             );
         }
     };
 
     return (
-        <div className="flex flex-col items-center gap-4 py-4 max-w-full overflow-hidden">
-            {/* Printable Receipt Area */}
-            <div id="printable-receipt" style={containerStyle}>
-                <style>{printStyle}</style>
-                {renderContent()}
+        <>
+            {/* Screen View - Visible only on screen, hidden automatically by PrintArea during print */}
+            <div className="flex flex-col items-center gap-4 py-4 max-w-full overflow-hidden">
+                <div style={containerStyle}>
+                    {renderContent()}
+                </div>
             </div>
 
-            {/* Action Buttons Removed as per request (handled by parent modal) */}
-        </div>
+            {/* Print View - Rendered in a top-level portal, visible only during print */}
+            <PrintArea>
+                <div id="printable-receipt">
+                    <style>{printStyle}</style>
+                    {renderContent()}
+                </div>
+            </PrintArea>
+        </>
     );
 };
 
