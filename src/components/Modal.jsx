@@ -5,7 +5,7 @@ import { useInstall } from '../context/useInstall';
 import { triggerHaptic } from '../utils/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const Modal = ({ isOpen, onClose, title, children, zIndex = 20002 }) => {
+const Modal = ({ isOpen, onClose, title, children, zIndex = 20002, containerClassName = "" }) => {
     const { isStandalone } = useInstall();
 
     // Prevent scrolling when open
@@ -31,7 +31,7 @@ const Modal = ({ isOpen, onClose, title, children, zIndex = 20002 }) => {
                     alignItems: 'center', // Default center
                     justifyContent: 'center',
                     padding: '20px',
-                }} className="modal-overlay">
+                }} className={`modal-overlay ${containerClassName}`}>
                     <style>{`
                         .modal-overlay {
                             align-items: center;

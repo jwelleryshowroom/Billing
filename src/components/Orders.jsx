@@ -381,7 +381,7 @@ const Orders = () => {
             )}
 
             {/* Print Modal */}
-            <Modal isOpen={showReceipt} onClose={() => setShowReceipt(false)} title="Print Document" zIndex={20000}>
+            <Modal isOpen={showReceipt} onClose={() => setShowReceipt(false)} title="Print Document" zIndex={20000} containerClassName="printing-active">
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     {selectedOrder && (
                         <div id="printable-receipt-wrapper">

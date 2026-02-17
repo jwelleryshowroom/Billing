@@ -504,6 +504,7 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
                 onClose={() => { setShowReceipt(false); if (onSuccess) onSuccess(); }}
                 title="Invoice Placed"
                 zIndex={30000}
+                containerClassName="printing-active"
             >
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
                     <div style={{ color: 'var(--color-success)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>

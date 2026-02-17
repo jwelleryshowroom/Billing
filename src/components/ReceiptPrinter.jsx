@@ -58,77 +58,97 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                 margin: 0 !important;
                 padding: 0 !important;
                 background: white !important;
-            }
-
-            /* Hide everything in #root */
-            #root, .no-print { 
-                display: none !important; 
-            }
-
-            /* Surgical targeting of the modal containing the receipt.
-               We hide all modal overlays first, then show only the one with the receipt. */
-            .modal-overlay {
-                display: none !important;
-            }
-
-            .modal-overlay:has(#printable-receipt-wrapper),
-            .modal-overlay:has(#printable-receipt-wrapper) * {
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                transform: none !important;
-                background: white !important;
-                color: black !important;
-                overflow: visible !important;
-                max-height: none !important;
-            }
-
-            .modal-overlay:has(#printable-receipt-wrapper) {
-                position: absolute !important;
-                inset: 0 !important;
-                padding: 0 !important;
-                z-index: 999999 !important;
-                backdrop-filter: none !important;
-            }
-
-            .modal-content:has(#printable-receipt-wrapper) {
-                border: none !important;
-                box-shadow: none !important;
-                width: 100% !important;
-                max-width: none !important;
-            }
-
-            /* Hide modal chrome: Header, Buttons, Success message */
-            .modal-content h2,
-            .modal-content button,
-            .modal-content .text-success,
-            #printable-receipt-wrapper > *:not(#printable-receipt),
-            .btn-print-now {
-                display: none !important;
-            }
-
-            #printable-receipt-wrapper {
-                border: none !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-                overflow: visible !important;
-            }
-
-            #printable-receipt {
-                width: 79mm !important;
-                margin: 0 auto !important;
-                padding: 8mm 5mm !important;
-                background: white !important;
-                color: black !important;
-                font-family: 'Courier New', monospace !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
 
+            /* Hide everything by default except the body and its direct children */
+            #root, .no-print { 
+                display: none !important; 
+            }
+
+            /* Hide ALL modals by default, except the one we are printing */
+            .modal-overlay {
+                display: none !important;
+                background: white !important;
+                backdrop-filter: none !important;
+                position: absolute !important;
+                inset: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            /* The SPECIFIC modal we want to print */
+            .modal-overlay.printing-active {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                transform: none !important;
+                z-index: 999999 !important;
+            }
+
+            /* Ensure all parent containers of the receipt are visible and not clipped */
+            .printing-active .modal-content {
+                display: block !important;
+                visibility: visible !important;
+                position: relative !important;
+                width: 100% !important;
+                max-width: none !important;
+                height: auto !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: white !important;
+                transform: none !important;
+                opacity: 1 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            /* Hide modal chrome: Header, Buttons, Success message, and confirm text */
+            .printing-active .modal-content h2,
+            .printing-active .modal-content button,
+            .printing-active .modal-content .text-success,
+            .btn-print-now,
+            #printable-receipt-wrapper > *:not(#printable-receipt) {
+                display: none !important;
+            }
+
+            /* The actual printable receipt container */
+            #printable-receipt-wrapper {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+
+            #printable-receipt {
+                display: block !important;
+                visibility: visible !important;
+                width: 79mm !important;
+                margin: 0 auto !important;
+                padding: 10mm 5mm !important;
+                background: white !important;
+                color: black !important;
+                font-family: 'Courier New', monospace !important;
+                position: relative !important;
+            }
+
+            /* Force all text inside receipt to be visible and black */
             #printable-receipt * {
+                display: inline-block !important; /* Help with legacy rendering */
                 visibility: visible !important;
                 color: black !important;
+                background: transparent !important;
                 overflow: visible !important;
+            }
+            
+            /* Specific fix for text color inside receipt elements */
+            #printable-receipt span, 
+            #printable-receipt div, 
+            #printable-receipt h1 {
+                color: black !important;
             }
         }
     `;
