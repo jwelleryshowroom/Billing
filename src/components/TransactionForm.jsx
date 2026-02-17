@@ -34,6 +34,7 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
     const [showReceipt, setShowReceipt] = useState(false);
     const [lastTransaction, setLastTransaction] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [paymentType, setPaymentType] = useState('cash'); // NEW
 
     // Sync type if prop changes
     useEffect(() => {
@@ -93,8 +94,9 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
         if (showReceipt && lastTransaction) {
             // Wait for modal transition and DOM render
             const timer = setTimeout(() => {
+                window.focus(); // Ensure browser window is active
                 window.print();
-            }, 800);
+            }, 2000); // Increased timeout to 2000ms to ensure dialog is in front and content is painted
             return () => clearTimeout(timer);
         }
     }, [showReceipt, lastTransaction]);
@@ -133,7 +135,7 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
             // Store details for ReceiptPrinter
             items: [saleItem],
             customer: { name: 'Walk-in', phone: '' },
-            payment: { type: 'cash' },
+            payment: { type: paymentType }, // UPDATED from 'cash'
             mode: 'quick'
         };
 
@@ -407,6 +409,36 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
                         </div>
                     )}
 
+                    {/* PAYMENT METHOD TOGGLE (NEW) */}
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <button
+                            onClick={() => { triggerHaptic('light'); setPaymentType('cash'); }}
+                            style={{
+                                flex: 1, padding: '10px', borderRadius: '10px',
+                                border: `1px solid ${paymentType === 'cash' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                                background: paymentType === 'cash' ? 'rgba(16, 185, 129, 0.1)' : 'var(--color-bg-surface)',
+                                color: paymentType === 'cash' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem' }}>💵</span> CASH
+                        </button>
+                        <button
+                            onClick={() => { triggerHaptic('light'); setPaymentType('upi'); }}
+                            style={{
+                                flex: 1, padding: '10px', borderRadius: '10px',
+                                border: `1px solid ${paymentType === 'upi' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                                background: paymentType === 'upi' ? 'rgba(16, 185, 129, 0.1)' : 'var(--color-bg-surface)',
+                                color: paymentType === 'upi' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem' }}>📱</span> UPI
+                        </button>
+                    </div>
+
                     {/* Actions */}
                     <button
                         onClick={() => {
@@ -466,15 +498,20 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
             )}
 
             {/* RECEIPT MODAL */}
-            {/* RECEIPT MODAL - Matches Billing.jsx Exactly */}
-            <Modal isOpen={showReceipt && lastTransaction} onClose={() => { setShowReceipt(false); if (onSuccess) onSuccess(); }} title="Invoice Placed" zIndex={20000}>
+            {/* RECEIPT MODAL - Higher Z-Index to be above Quick Sale Modal */}
+            <Modal
+                isOpen={showReceipt && lastTransaction}
+                onClose={() => { setShowReceipt(false); if (onSuccess) onSuccess(); }}
+                title="Invoice Placed"
+                zIndex={30000}
+            >
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
                     <div style={{ color: 'var(--color-success)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <CheckCircle size={24} />
                         <span>Transaction Saved Successfully!</span>
                     </div>
 
-                    <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                    <div id="printable-receipt-wrapper" style={{ border: '1px solid var(--color-border)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                         <ReceiptPrinter
                             transaction={lastTransaction || {}}
                             type="TAX_INVOICE"

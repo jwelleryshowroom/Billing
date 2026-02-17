@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTransactions } from '../context/useTransactions';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, format, isSameDay } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, format, isSameDay, subDays } from 'date-fns';
 import { useTheme } from '../context/useTheme';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Download, BarChart2, Calendar as CalendarIcon, Inbox, PieChart as PieChartIcon, ShoppingBag } from 'lucide-react';
@@ -183,29 +183,43 @@ const EmptyState = ({ isDark }) => (
 );
 
 const Reports = ({ setCurrentView, isModal, onClose }) => {
-    const { transactions, loading, setViewDateRange, currentRange } = useTransactions();
+    const {
+        transactions: globalTransactions,
+        loading: globalLoading,
+        setViewDateRange,
+        currentRange,
+        fetchTransactionsByRange
+    } = useTransactions();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    const [view, setView] = useState('weekly'); // [FIX] Default to weekly
+    const [view, setView] = useState('monthly'); // Default to monthly
     const [viewType, setViewType] = useState('transactions'); // 'transactions' | 'items'
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
 
+    // Local state for modal mode data isolation
+    const [localTransactions, setLocalTransactions] = useState([]);
+    const [localLoading, setLocalLoading] = useState(false);
+
+    // Use local or global transactions
+    const transactions = isModal ? localTransactions : globalTransactions;
+    const loading = isModal ? localLoading : globalLoading;
+
     const reportData = useMemo(() => {
-        const now = new Date();
+        const anchor = selectedDate;
         let start, end;
 
         if (view === 'daily') {
-            return transactions.filter(t => isSameDay(new Date(t.date), selectedDate));
+            return transactions.filter(t => isSameDay(new Date(t.date), anchor));
         }
 
         if (view === 'weekly') {
-            start = startOfWeek(now, { weekStartsOn: 1 }); // Monday start
-            end = endOfWeek(now, { weekStartsOn: 1 });
+            start = startOfWeek(anchor, { weekStartsOn: 1 });
+            end = endOfWeek(anchor, { weekStartsOn: 1 });
         } else {
-            start = startOfMonth(now);
-            end = endOfMonth(now);
+            start = startOfMonth(anchor);
+            end = endOfMonth(anchor);
         }
 
         return transactions.filter(t =>
@@ -256,28 +270,36 @@ const Reports = ({ setCurrentView, isModal, onClose }) => {
 
     // Effect to Sync Context with View
     React.useEffect(() => {
-        const now = selectedDate; // Use selected date as anchor
+        const now = selectedDate;
         let start, end;
 
         if (view === 'daily') {
-            // For daily view, we might want to load the whole month to make calendar navigation smooth, 
-            // or just the day. Let's load the MONTH of the selected date so the calendar dots work.
             start = startOfMonth(now);
             end = endOfMonth(now);
         } else if (view === 'weekly') {
             start = startOfWeek(now, { weekStartsOn: 1 });
             end = endOfWeek(now, { weekStartsOn: 1 });
         } else {
-            // Monthly
             start = startOfMonth(now);
             end = endOfMonth(now);
         }
 
-        // Only update if range is different (Simple check using ISO string)
-        if (start.toISOString() !== currentRange.start.toISOString() || end.toISOString() !== currentRange.end.toISOString()) {
-            setViewDateRange(start, end);
+        if (isModal) {
+            // Fetch locally
+            const fetchLocal = async () => {
+                setLocalLoading(true);
+                const data = await fetchTransactionsByRange(start, end);
+                setLocalTransactions(data);
+                setLocalLoading(false);
+            };
+            fetchLocal();
+        } else {
+            // Update global range
+            if (start.toISOString() !== currentRange.start.toISOString() || end.toISOString() !== currentRange.end.toISOString()) {
+                setViewDateRange(start, end);
+            }
         }
-    }, [view, selectedDate, setViewDateRange, currentRange.start, currentRange.end]);
+    }, [view, selectedDate, setViewDateRange, currentRange.start, currentRange.end, isModal, fetchTransactionsByRange]);
 
     const toggleView = (newView) => {
         triggerHaptic('light');
@@ -291,16 +313,35 @@ const Reports = ({ setCurrentView, isModal, onClose }) => {
     };
 
     const getTitle = () => {
-        const now = new Date();
+        const anchor = selectedDate;
         if (view === 'weekly') {
-            const start = startOfWeek(now, { weekStartsOn: 1 });
-            const end = endOfWeek(now, { weekStartsOn: 1 });
-            return `This Week (${format(start, 'dd MMM')} - ${format(end, 'dd MMM')})`;
+            const start = startOfWeek(anchor, { weekStartsOn: 1 });
+            const end = endOfWeek(anchor, { weekStartsOn: 1 });
+            return `Week (${format(start, 'dd MMM')} - ${format(end, 'dd MMM')})`;
         }
         if (view === 'monthly') {
-            return `This Month (${format(now, 'MMM yyyy')})`;
+            return `Month (${format(anchor, 'MMM yyyy')})`;
         }
-        return `Daily Report (${format(selectedDate, 'dd MMM yyyy')})`;
+        return `Daily (${format(selectedDate, 'dd MMM yyyy')})`;
+    };
+
+    // --- NAVIGATION HELPERS ---
+    const navigateDate = (direction) => {
+        triggerHaptic('light');
+        const now = new Date();
+        let newDate;
+
+        if (view === 'weekly') {
+            newDate = direction === 'prev' ? subDays(selectedDate, 7) : subDays(selectedDate, -7);
+        } else if (view === 'monthly') {
+            newDate = direction === 'prev' ? subDays(selectedDate, 30) : subDays(selectedDate, -30);
+        } else {
+            newDate = direction === 'prev' ? subDays(selectedDate, 1) : subDays(selectedDate, -1);
+        }
+
+        // Prevent future navigation
+        if (newDate > now) return;
+        setSelectedDate(newDate);
     };
 
     return (
@@ -385,7 +426,7 @@ const Reports = ({ setCurrentView, isModal, onClose }) => {
                 {/* Date Toggles */}
                 <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
                     {[
-                        { id: 'daily', label: 'Today', icon: '🍕' },
+                        { id: 'all', label: 'Up-to-date', icon: '✨' },
                         { id: 'weekly', label: 'Week', icon: '🍩' },
                         { id: 'monthly', label: 'Month', icon: '🥐' }
                     ].map(item => (
@@ -393,11 +434,13 @@ const Reports = ({ setCurrentView, isModal, onClose }) => {
                             key={item.id}
                             onClick={() => {
                                 triggerHaptic('light');
-                                if (item.id === 'daily') {
+                                if (item.id === 'all') {
                                     setSelectedDate(new Date());
+                                    setView('monthly'); // "Full data" for current month
                                     setShowCalendar(false);
+                                } else {
+                                    setView(item.id);
                                 }
-                                setView(item.id);
                             }}
                             className="btn-scale report-nav-btn"
                             style={{
@@ -502,7 +545,35 @@ const Reports = ({ setCurrentView, isModal, onClose }) => {
             }}>
                 {/* Title & Actions */}
                 <div className="report-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h3 className="report-title" style={{ margin: 0, fontWeight: 800, color: isDark ? '#fff7ed' : '#18181b' }}>{getTitle()}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                            onClick={() => navigateDate('prev')}
+                            className="btn-scale"
+                            style={{
+                                width: '40px', height: '40px', borderRadius: '12px',
+                                background: isDark ? 'rgba(255,255,255,0.05)' : 'white',
+                                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e4e4e7',
+                                color: isDark ? 'white' : '#18181b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >
+                            {'<'}
+                        </button>
+                        <h3 className="report-title" style={{ margin: 0, fontWeight: 800, color: isDark ? '#fff7ed' : '#18181b' }}>{getTitle()}</h3>
+                        <button
+                            onClick={() => navigateDate('next')}
+                            disabled={selectedDate >= new Date()}
+                            className="btn-scale"
+                            style={{
+                                width: '40px', height: '40px', borderRadius: '12px',
+                                background: isDark ? 'rgba(255,255,255,0.05)' : 'white',
+                                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e4e4e7',
+                                color: isDark ? 'white' : '#18181b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                opacity: selectedDate >= new Date() ? 0.3 : 1
+                            }}
+                        >
+                            {'>'}
+                        </button>
+                    </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         {!isModal && (
                             <button

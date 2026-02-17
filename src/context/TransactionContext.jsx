@@ -69,6 +69,18 @@ export const TransactionProvider = ({ children }) => {
         });
     }, []);
 
+    const fetchTransactionsByRange = React.useCallback(async (startDate, endDate) => {
+        if (!businessId) return [];
+        const q = query(
+            getCollectionRef(businessId, 'transactions'),
+            where('date', '>=', startOfDay(startDate).toISOString()),
+            where('date', '<=', endOfDay(endDate).toISOString()),
+            orderBy('date', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }, [businessId]);
+
     const addTransaction = async (transaction) => {
         try {
             // Remove undefined fields to prevent Firestore crashes
@@ -208,6 +220,7 @@ export const TransactionProvider = ({ children }) => {
         loading,
         currentRange,
         setViewDateRange,
+        fetchTransactionsByRange,
         addTransaction,
         updateTransaction,
         deleteTransaction,

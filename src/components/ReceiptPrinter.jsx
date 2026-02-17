@@ -46,29 +46,90 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
     // Print CSS
     const printStyle = `
         @media print {
-            @page { size: auto; margin: 0mm; }
-            body { 
-                visibility: hidden; 
-                overflow: hidden; 
+            @page { 
+                size: auto; 
+                margin: 0mm; 
             }
-            #printable-receipt { 
-                visibility: visible;
-                position: fixed; 
-                left: 0; 
-                top: 0; 
-                width: 79mm; 
-                height: auto;
-                padding: 1mm;
-                background: white;
-                z-index: 99999;
-                font-family: 'Courier New', monospace; 
-                margin: 0;
+            
+            /* Global reset: Allow everything to expand and be visible for printing */
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+
+            /* Hide everything in #root */
+            #root, .no-print { 
+                display: none !important; 
+            }
+
+            /* Surgical targeting of the modal containing the receipt.
+               We hide all modal overlays first, then show only the one with the receipt. */
+            .modal-overlay {
+                display: none !important;
+            }
+
+            .modal-overlay:has(#printable-receipt-wrapper),
+            .modal-overlay:has(#printable-receipt-wrapper) * {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                transform: none !important;
+                background: white !important;
+                color: black !important;
+                overflow: visible !important;
+                max-height: none !important;
+            }
+
+            .modal-overlay:has(#printable-receipt-wrapper) {
+                position: absolute !important;
+                inset: 0 !important;
+                padding: 0 !important;
+                z-index: 999999 !important;
+                backdrop-filter: none !important;
+            }
+
+            .modal-content:has(#printable-receipt-wrapper) {
+                border: none !important;
                 box-shadow: none !important;
+                width: 100% !important;
+                max-width: none !important;
             }
-            #printable-receipt * { 
-                visibility: visible; 
+
+            /* Hide modal chrome: Header, Buttons, Success message */
+            .modal-content h2,
+            .modal-content button,
+            .modal-content .text-success,
+            #printable-receipt-wrapper > *:not(#printable-receipt),
+            .btn-print-now {
+                display: none !important;
             }
-            .no-print { display: none !important; }
+
+            #printable-receipt-wrapper {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            #printable-receipt {
+                width: 79mm !important;
+                margin: 0 auto !important;
+                padding: 8mm 5mm !important;
+                background: white !important;
+                color: black !important;
+                font-family: 'Courier New', monospace !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            #printable-receipt * {
+                visibility: visible !important;
+                color: black !important;
+                overflow: visible !important;
+            }
         }
     `;
 

@@ -6,7 +6,7 @@ import {
     Legend, PieChart, Pie, Cell
 } from 'recharts';
 import { format, subDays, isAfter, startOfDay, isSameDay } from 'date-fns';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Smartphone } from 'lucide-react';
 
 const Analytics = ({ setCurrentView }) => {
     const { transactions, setViewDateRange } = useTransactions();
@@ -75,17 +75,40 @@ const Analytics = ({ setCurrentView }) => {
         });
     }, [transactions, dateRange]);
 
-    // 1. Daily Sales vs Expense
+    // 1. Daily Sales vs Expense (MM/DD Format, gaps filled)
     const dailyData = useMemo(() => {
-        const groups = {};
+        const data = [];
+        const days = dateRange === 'today' ? 0 : parseInt(dateRange);
+
+        for (let i = days - 1; i >= 0; i--) {
+            const date = subDays(new Date(), i);
+            const dateKey = format(date, 'MM/dd'); // MM/DD format
+            const isoDate = format(date, 'yyyy-MM-dd');
+
+            data.push({
+                name: dateKey,
+                isoDate,
+                sales: 0,
+                expense: 0
+            });
+        }
+
+        // Handle 'today' specifically if it results in empty array
+        if (data.length === 0) {
+            const now = new Date();
+            data.push({ name: format(now, 'MM/dd'), isoDate: format(now, 'yyyy-MM-dd'), sales: 0, expense: 0 });
+        }
+
         filteredTransactions.forEach(t => {
-            const dateKey = format(new Date(t.date), 'dd/MM');
-            if (!groups[dateKey]) groups[dateKey] = { name: dateKey, sales: 0, expense: 0 };
-            if (t.type === 'sale' || t.type === 'order' || t.type === 'settlement') groups[dateKey].sales += t.amount;
-            else if (t.type === 'expense') groups[dateKey].expense += t.amount;
+            const tDate = format(new Date(t.date), 'yyyy-MM-dd');
+            const day = data.find(d => d.isoDate === tDate);
+            if (day) {
+                if (t.type === 'sale' || t.type === 'order' || t.type === 'settlement') day.sales += t.amount;
+                else if (t.type === 'expense') day.expense += t.amount;
+            }
         });
-        return Object.values(groups).reverse();
-    }, [filteredTransactions]);
+        return data;
+    }, [filteredTransactions, dateRange]);
 
     // 2. Peak Time of Sale
     const peakTimeData = useMemo(() => {
@@ -148,6 +171,36 @@ const Analytics = ({ setCurrentView }) => {
             { name: 'Expense', value: expense }
         ];
     }, [filteredTransactions]);
+
+    // 6. Cash vs UPI Collection Trends (MM/DD Format, dynamic range)
+    const collectionData = useMemo(() => {
+        const range = dateRange === 'today' ? 1 : parseInt(dateRange);
+        const data = [];
+
+        for (let i = range - 1; i >= 0; i--) {
+            const date = subDays(new Date(), i);
+            data.push({
+                name: format(date, 'MM/dd'), // MM/DD format
+                fullDate: format(date, 'yyyy-MM-dd'),
+                cash: 0,
+                upi: 0
+            });
+        }
+
+        filteredTransactions.forEach(t => {
+            if (t.type === 'sale' || t.type === 'order' || t.type === 'settlement') {
+                const tDate = format(new Date(t.date), 'yyyy-MM-dd');
+                const day = data.find(d => d.fullDate === tDate);
+                if (day) {
+                    const amount = Number(t.amount);
+                    if (t.payment?.type === 'upi') day.upi += amount;
+                    else day.cash += amount;
+                }
+            }
+        });
+
+        return data;
+    }, [filteredTransactions, dateRange]);
 
     const COLORS_OVERALL = isDark ? ['#FFD700', '#FF6B6B'] : ['#2E7D32', '#C62828'];
 
@@ -489,6 +542,57 @@ const Analytics = ({ setCurrentView }) => {
                                         animationDuration={800}
                                     />
                                 </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Card 6: Collection Trends (Cash vs UPI) */}
+                    <div className="card glass" style={{
+                        minHeight: '350px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        backgroundColor: themeStyles.cardBg,
+                        border: `1px solid ${themeStyles.border}`,
+                        gridColumn: dateRange === '30' ? '1 / -1' : 'auto'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px', color: isDark ? '#fff' : themeStyles.textMain }}>
+                                <Smartphone size={18} /> Collection Trends (Cash vs UPI)
+                            </h3>
+                            <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80' }}></div>
+                                    <span style={{ color: themeStyles.textSecondary }}>Cash</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#818cf8' }}></div>
+                                    <span style={{ color: themeStyles.textSecondary }}>UPI</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={collectionData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorCashCol" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#4ade80" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#4ade80" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorUPICol" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#818cf8" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} stroke={themeStyles.chartGrid} strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: themeStyles.textSecondary }} />
+                                    <YAxis hide />
+                                    <Tooltip
+                                        formatter={(value) => formatCurrency(value)}
+                                        contentStyle={tooltipStyle}
+                                    />
+                                    <Area type="monotone" dataKey="cash" stroke="#4ade80" strokeWidth={2} fillOpacity={1} fill="url(#colorCashCol)" animationDuration={800} />
+                                    <Area type="monotone" dataKey="upi" stroke="#818cf8" strokeWidth={2} fillOpacity={1} fill="url(#colorUPICol)" animationDuration={800} />
+                                </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     </div>

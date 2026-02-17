@@ -322,7 +322,7 @@ const Billing = () => {
             } : null,
             delivery: (isOrder && handoverMode === 'later') ? deliveryDetails : null,
             payment: {
-                method: payment.type,
+                type: payment.type,
                 advance: isOrder ? advanceAmount : 0,
                 balance: isOrder ? balanceDue : 0,
                 status: isOrder ? (balanceDue <= 0 ? 'paid' : 'partial') : 'paid'

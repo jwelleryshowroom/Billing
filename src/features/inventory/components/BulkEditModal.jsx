@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Save, Search, AlertTriangle, ArrowUp } from 'lucide-react';
 import { useInventory } from '../../../context/InventoryContext';
 import { triggerHaptic } from '../../../utils/haptics';
 
-const BulkEditModal = ({ isOpen, onClose }) => {
+const BulkEditModal = ({ isOpen, onClose, highlightLowStock = false }) => {
     const { items, updateItem } = useInventory();
     const [editItems, setEditItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -52,10 +52,26 @@ const BulkEditModal = ({ isOpen, onClose }) => {
         onClose();
     };
 
-    // Filter list
-    const filteredList = editItems.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Filter and Sort list
+    const filteredList = useMemo(() => {
+        let list = editItems.filter(item =>
+            item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        if (highlightLowStock) {
+            // Sort: Low stock items (<=5) first, then by name
+            list = [...list].sort((a, b) => {
+                const aLow = (a.trackStock !== false && a.stock <= 5);
+                const bLow = (b.trackStock !== false && b.stock <= 5);
+
+                if (aLow && !bLow) return -1;
+                if (!aLow && bLow) return 1;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        return list;
+    }, [editItems, searchTerm, highlightLowStock]);
 
     if (!isOpen) return null;
 
@@ -128,11 +144,37 @@ const BulkEditModal = ({ isOpen, onClose }) => {
                         <tbody>
                             {filteredList.map(item => {
                                 const isDirty = changedIds.has(item.id);
+                                const isLowStock = item.trackStock !== false && item.stock <= 5;
+                                const shouldHighlight = highlightLowStock && isLowStock;
+
                                 return (
-                                    <tr key={item.id} style={{ borderBottom: '1px solid var(--color-border)', height: '60px' }}>
+                                    <tr key={item.id} style={{
+                                        borderBottom: '1px solid var(--color-border)',
+                                        height: '60px',
+                                        backgroundColor: shouldHighlight ? 'rgba(239, 68, 68, 0.05)' : 'transparent',
+                                        transition: 'background-color 0.3s ease'
+                                    }}>
                                         <td style={{ padding: '0 16px', maxWidth: '180px' }}>
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{item.category}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{item.category}</div>
+                                                </div>
+                                                {isLowStock && (
+                                                    <div style={{
+                                                        padding: '2px 6px',
+                                                        backgroundColor: '#fee2e2',
+                                                        color: '#ef4444',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 700,
+                                                        textTransform: 'uppercase',
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        Low Stock
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                         <td style={{ padding: '0 4px', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg-secondary)', borderRadius: '8px', padding: '2px', height: '36px' }}>

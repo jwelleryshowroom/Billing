@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, Plus } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useInventory } from '../context/InventoryContext';
 import { useAuth } from '../context/useAuth';
 
@@ -19,7 +20,19 @@ import { useInventoryActions } from '../features/inventory/hooks/useInventoryAct
 const Inventory = () => {
     const { items, loading } = useInventory();
     const { role } = useAuth(); // retained for any potential top-level role logic not in sub-components
+    const location = useLocation();
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false); // [NEW]
+    const [highlightLowStock, setHighlightLowStock] = useState(false);
+
+    // --- Redirection Logic from Dashboard ---
+    useEffect(() => {
+        if (location.state?.openBulkEdit) {
+            setIsBulkEditOpen(true);
+            if (location.state?.highlightLowStock) {
+                setHighlightLowStock(true);
+            }
+        }
+    }, [location.state]);
 
     // --- Responsive Check ---
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -266,7 +279,11 @@ const Inventory = () => {
 
             <BulkEditModal
                 isOpen={isBulkEditOpen}
-                onClose={() => setIsBulkEditOpen(false)}
+                onClose={() => {
+                    setIsBulkEditOpen(false);
+                    setHighlightLowStock(false);
+                }}
+                highlightLowStock={highlightLowStock}
             />
 
             <DeleteConfirmationModal

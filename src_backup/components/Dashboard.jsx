@@ -1,0 +1,376 @@
+import React, { useMemo, useState } from 'react';
+import { useTransactions } from '../context/useTransactions';
+import { useTheme } from '../context/useTheme';
+import { useAuth } from '../context/useAuth';
+import TransactionForm from './TransactionForm';
+import Modal from './Modal';
+import AccessDeniedModal from './AccessDeniedModal';
+import { triggerHaptic } from '../utils/haptics';
+import { format } from 'date-fns';
+import { TrendingUp, TrendingDown, Wallet, Trash2, ChevronDown, ChevronUp, ShoppingBag, ShieldAlert } from 'lucide-react';
+
+
+const Dashboard = () => {
+    const { transactions, deleteTransaction } = useTransactions();
+    const { dashboardMode } = useTheme();
+    const { role } = useAuth();
+    const [isInputFocused, setIsInputFocused] = useState(false);
+    const focusTimeoutRef = React.useRef(null);
+
+    const handleInputFocus = () => {
+        if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+        setIsInputFocused(true);
+        setIsOverviewExpanded(false);
+    };
+
+    const handleInputBlur = () => {
+        focusTimeoutRef.current = setTimeout(() => {
+            setIsInputFocused(false);
+        }, 200); // Small delay to prevent flickering when switching fields
+    };
+
+    const [isOverviewExpanded, setIsOverviewExpanded] = useState(true);
+    const [accessDeniedModal, setAccessDeniedModal] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalInitialType, setModalInitialType] = useState('sale');
+
+    // Filter today's transactions and calculate totals
+    const { todaysTransactions, income, expense } = useMemo(() => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const filteredTransactions = transactions
+            .filter(t => format(new Date(t.date), 'yyyy-MM-dd') === today)
+            .sort((a, b) => new Date(b.date) - new Date(a.date)); // Force Newest First
+
+        const totalIncome = filteredTransactions
+            .filter(t => t.type === 'sale' || t.type === 'order' || t.type === 'settlement')
+            .reduce((acc, curr) => acc + curr.amount, 0);
+
+        const totalExpense = filteredTransactions
+            .filter(t => t.type === 'expense')
+            .reduce((acc, curr) => acc + curr.amount, 0);
+
+        return { todaysTransactions: filteredTransactions, income: totalIncome, expense: totalExpense };
+    }, [transactions]);
+
+    const handleOpenModal = (type) => {
+        setModalInitialType(type);
+        setShowModal(true);
+    };
+
+    const handleDeleteClick = (id) => {
+        // [MODIFIED] Block both Guest and Staff
+        if (role !== 'admin') {
+            setAccessDeniedModal(true);
+            return;
+        }
+        deleteTransaction(id);
+    };
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            {/* Toggle Header for Overview */}
+            {(!isInputFocused || dashboardMode !== 'inline') && (
+                <div
+                    onClick={() => {
+                        triggerHaptic('light');
+                        setIsOverviewExpanded(!isOverviewExpanded);
+                    }}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '6px', // Reduced from 10px
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        flexShrink: 0
+                    }}
+                >
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Today's Overview</h2>
+                    <button className="btn" style={{ padding: '4px 8px', color: 'var(--color-text-muted)' }}>
+                        {isOverviewExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </button>
+                </div>
+            )}
+
+            {/* Collapsible Section: Summary Cards + Form/Buttons */}
+            {isOverviewExpanded && (
+                <div style={{ animation: 'fadeIn 0.2s ease-out', flexShrink: 0, position: 'relative', zIndex: 50 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                        <div className="card" style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <div style={{ padding: '6px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.1)', display: 'flex' }}>
+                                    <TrendingUp size={18} className="text-success" />
+                                </div>
+                                <span>Sales</span>
+                            </div>
+                            <div className="text-success font-bold" style={{ fontSize: '1.5rem' }}>
+                                ₹{income.toFixed(2)}
+                            </div>
+                        </div>
+                        <div className="card" style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <div style={{ padding: '6px', borderRadius: '50%', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex' }}>
+                                    <TrendingDown size={18} className="text-danger" />
+                                </div>
+                                <span>Expense</span>
+                            </div>
+                            <div className="text-danger font-bold" style={{ fontSize: '1.5rem' }}>
+                                ₹{expense.toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Action Section - ALWAYS VISIBLE */}
+            <div style={{ marginBottom: '10px', flexShrink: 0 }}>
+                {dashboardMode === 'inline' ? (
+                    <TransactionForm
+                        onInputFocus={handleInputFocus}
+                        onInputBlur={handleInputBlur}
+                    />
+                ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <button
+                            onClick={() => {
+                                triggerHaptic('light');
+                                handleOpenModal('sale');
+                            }}
+                            className="btn-premium-hover"
+                            style={{
+                                position: 'relative',
+                                width: 'calc(100% - 20px)',
+                                margin: '10px',
+                                padding: '20px',
+                                borderRadius: '24px',
+                                background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05))',
+                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '12px',
+                                cursor: 'pointer',
+                                boxShadow: '0 10px 30px -10px rgba(16, 185, 129, 0.3)',
+                                overflow: 'hidden',
+                                height: '160px',
+                                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                zIndex: 10
+                            }}
+                        >
+                            {/* Decorative Blob */}
+                            <div style={{
+                                position: 'absolute',
+                                top: '-20%',
+                                right: '-20%',
+                                width: '100px',
+                                height: '100px',
+                                background: 'rgba(16, 185, 129, 0.2)',
+                                filter: 'blur(40px)',
+                                borderRadius: '50%'
+                            }} />
+
+                            <div style={{ fontSize: '3rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }}>
+                                🧁
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text-main)' }}>Daily Sale</div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>Sell sweet treats</div>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                triggerHaptic('light');
+                                handleOpenModal('expense');
+                            }}
+                            className="btn-premium-hover"
+                            style={{
+                                position: 'relative',
+                                width: 'calc(100% - 20px)',
+                                margin: '10px',
+                                padding: '20px',
+                                borderRadius: '24px',
+                                background: 'linear-gradient(145deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05))',
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '12px',
+                                cursor: 'pointer',
+                                boxShadow: '0 10px 30px -10px rgba(239, 68, 68, 0.3)',
+                                overflow: 'hidden',
+                                height: '160px',
+                                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                zIndex: 10
+                            }}
+                        >
+                            {/* Decorative Blob */}
+                            <div style={{
+                                position: 'absolute',
+                                top: '-20%',
+                                right: '-20%',
+                                width: '100px',
+                                height: '100px',
+                                background: 'rgba(239, 68, 68, 0.2)',
+                                filter: 'blur(40px)',
+                                borderRadius: '50%'
+                            }} />
+
+                            <div style={{ fontSize: '3rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }}>
+                                💸
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text-main)' }}>Add Expense</div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>Log spending</div>
+                            </div>
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Divider if collapsed */}
+            {
+                !isOverviewExpanded && (
+                    <div style={{
+                        borderBottom: '1px solid var(--color-border)',
+                        marginBottom: '20px',
+                        paddingBottom: '10px',
+                        color: 'var(--color-text-muted)',
+                        fontSize: '0.9rem',
+                        flexShrink: 0
+                    }}>
+                        <span style={{ marginRight: '16px' }}><span className="text-success">Sales: ₹{income.toFixed(0)}</span></span>
+                        <span><span className="text-danger">Exp: ₹{expense.toFixed(0)}</span></span>
+                    </div>
+                )
+            }
+
+            {/* Recent Activity Section (Scrollable) */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexShrink: 0 }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Recent Activity</h3>
+                <button
+                    onClick={() => {
+                        triggerHaptic('light');
+                        setIsOverviewExpanded(!isOverviewExpanded);
+                    }}
+                    className="btn"
+                    style={{ padding: '4px 8px', color: 'var(--color-text-muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                    {isOverviewExpanded ? (
+                        <>
+                            <ChevronUp size={16} /> Collapse Overview
+                        </>
+                    ) : (
+                        <>
+                            <ChevronDown size={16} /> Expand Overview
+                        </>
+                    )}
+                </button>
+            </div>
+            <div className="card" style={{ padding: 0, overflow: 'hidden', flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {todaysTransactions.length === 0 ? (
+                        <div style={{
+                            padding: '40px 20px',
+                            textAlign: 'center',
+                            color: 'var(--color-text-muted)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flex: 1
+                        }}>
+                            <div style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--color-bg-body)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '16px',
+                                border: '1px solid var(--color-border)'
+                            }}>
+                                <ShoppingBag size={24} style={{ opacity: 0.5 }} />
+                            </div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)', margin: '0 0 4px 0' }}>No activity yet</h3>
+                            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.7 }}>Ready to sell some sweet treats? 🧁</p>
+                        </div>
+                    ) : (
+                        <div>
+                            {todaysTransactions.map((t, index) => (
+                                <div
+                                    key={t.id}
+                                    style={{
+                                        padding: '16px',
+                                        borderBottom: index !== todaysTransactions.length - 1 ? '1px solid var(--color-border)' : 'none',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
+                                        <div style={{ fontWeight: '500', fontSize: '0.95rem', lineHeight: '1.4' }}>
+                                            {t.description}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{
+                                                fontWeight: '600',
+                                                fontSize: '0.9rem',
+                                                whiteSpace: 'nowrap',
+                                                color: (t.type === 'sale' || t.type === 'order' || t.type === 'settlement') ? 'var(--color-success)' : 'var(--color-danger)'
+                                            }}>
+                                                {(t.type === 'sale' || t.type === 'order' || t.type === 'settlement') ? '+' : '-'}₹{Number(t.amount)}
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteClick(t.id)}
+                                                style={{ color: 'var(--color-text-muted)', opacity: 0.6, background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                                                onMouseLeave={(e) => e.currentTarget.style.opacity = 0.6}
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                            {format(new Date(t.date), 'h:mm a')}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Access Denied Modal (Standardized) */}
+            <AccessDeniedModal
+                isOpen={accessDeniedModal}
+                onClose={() => setAccessDeniedModal(false)}
+                title={role === 'staff' ? 'Munna Bhai Only! 🛑' : 'Circuit Only! 🛑'}
+                message={role === 'staff'
+                    ? "Ae Circuit! Tu hafte vasuli kar na. Delete Munna Bhai karega! 🔫"
+                    : '"Mamu idhar ghumne ka, delete kahe ko kar rela hai?" 🤕'}
+                role={role}
+            />
+
+            {/* Popup View Modal */}
+            <Modal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                title={modalInitialType === 'sale' ? 'Add Daily Sale' : 'Add Expense'}
+            >
+                <TransactionForm
+                    initialType={modalInitialType}
+                    onSuccess={() => setShowModal(false)}
+                />
+            </Modal>
+        </div >
+    );
+};
+
+export default Dashboard;

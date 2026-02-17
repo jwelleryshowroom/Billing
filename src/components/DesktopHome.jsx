@@ -3,8 +3,10 @@ import { useTransactions } from '../context/useTransactions';
 import { useInventory } from '../context/InventoryContext';
 import { useTheme } from '../context/useTheme';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
-import { TrendingUp, TrendingDown, ShoppingBag, Wallet, ArrowRight, Plus, FileBarChart, PieChart, Utensils, IndianRupee, Clock, AlertTriangle, Trash2, CheckCircle } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, isSameDay, subDays } from 'date-fns';
+import { TrendingUp, TrendingDown, ShoppingBag, Wallet, ArrowRight, Plus, FileBarChart, PieChart, Utensils, IndianRupee, Clock, AlertTriangle, Trash2, CheckCircle, Smartphone, Banknote } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import TransactionForm from './TransactionForm';
 import Modal from './Modal';
 import Reports from './Reports';
@@ -38,6 +40,17 @@ const DesktopHome = ({ setCurrentView }) => {
 
     const glassTextStyle = isDark ? 'white' : '#27272a';
     const glassSubTextStyle = isDark ? '#a1a1aa' : '#71717a';
+
+    // --- Window Size Tracking for Responsiveness ---
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const isLargeDesktop = windowWidth >= 1400;
+    const isSmallDesktop = windowWidth < 1200 && windowWidth > 768;
 
     // Helper for Transaction Display (COMPACT for Dashboard)
     const getTransactionTitle = (t) => {
@@ -82,6 +95,8 @@ const DesktopHome = ({ setCurrentView }) => {
         totalExpenses, todayExpenses,
         totalOrders, todayOrders,
         totalProfit, todayProfit,
+        totalCash, todayCash,
+        totalUPI, todayUPI,
         pendingOrders,
         recentActivity
     } = useMemo(() => {
@@ -89,6 +104,8 @@ const DesktopHome = ({ setCurrentView }) => {
 
         let tSales = 0, tExpenses = 0, tOrders = 0, tPending = 0;
         let dSales = 0, dExpenses = 0, dOrders = 0;
+        let tCash = 0, dCash = 0;
+        let tUPI = 0, dUPI = 0;
 
         const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
         const recent = sorted.slice(0, 50);
@@ -105,10 +122,17 @@ const DesktopHome = ({ setCurrentView }) => {
                     if (t.status === 'pending') tPending++;
                 }
 
+                // Payment Method Stats
+                const payMethod = t.payment?.type || 'cash';
+                if (payMethod === 'cash') tCash += amount;
+                if (payMethod === 'upi') tUPI += amount;
+
                 // TODAY
                 if (isToday) {
                     dSales += amount;
                     if (t.type === 'order') dOrders++;
+                    if (payMethod === 'cash') dCash += amount;
+                    if (payMethod === 'upi') dUPI += amount;
                 }
             } else if (t.type === 'expense') {
                 // TOTAL
@@ -129,6 +153,8 @@ const DesktopHome = ({ setCurrentView }) => {
             totalExpenses: tExpenses, todayExpenses: dExpenses,
             totalOrders: tOrders, todayOrders: dOrders,
             totalProfit: tProfit, todayProfit: dProfit,
+            totalCash: tCash, todayCash: dCash,
+            totalUPI: tUPI, todayUPI: dUPI,
             pendingOrders: tPending,
             recentActivity: recent
         };
@@ -158,9 +184,10 @@ const DesktopHome = ({ setCurrentView }) => {
         // 3. Sort by Sales Frequency DESC
         alerts.sort((a, b) => (itemSales[b.name] || 0) - (itemSales[a.name] || 0));
 
-        // 4. Return Top 4
+        // 4. Return Top 4 (or 2 if small)
         return alerts.slice(0, 4);
     }, [transactions, inventoryItems]);
+
 
 
     const handleOpenTransactionModal = (type) => {
@@ -180,7 +207,7 @@ const DesktopHome = ({ setCurrentView }) => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', padding: '24px', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', padding: '24px', overflowY: 'auto', paddingBottom: '40px' }}>
 
             {/* 1. TOP ROW - STATS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
@@ -228,36 +255,71 @@ const DesktopHome = ({ setCurrentView }) => {
 
             {/* 2. MAIN SECTION - 3 COLUMNS */}
             {/* [FIX] Changed columns to 2fr 1fr 1fr and gap to 16px to match Top Cards exactly */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px', flex: 1, minHeight: 0, paddingBottom: '80px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px', flex: 1, minHeight: 0, paddingBottom: '40px' }}>
 
                 {/* COL 1: LIVE ORDERS & LOW STOCK */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%', overflowY: 'auto', paddingRight: '4px' }} className="hide-scrollbar">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%', overflowY: 'auto', padding: '8px 8px 8px 0' }} className="hide-scrollbar">
 
                     {/* A. Live Orders */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.2rem', color: glassTextStyle }}>Live Orders</h3>
-                            <div style={{ display: 'flex', gap: '16px' }}>
-                                {['pending', 'ready', 'all'].map(status => (
-                                    <div
-                                        key={status}
-                                        onClick={() => setStatusFilter(status)}
-                                        style={{
-                                            color: statusFilter === status ? '#166534' : (isDark ? '#71717a' : '#a1a1aa'),
-                                            fontWeight: statusFilter === status ? 700 : 500,
-                                            cursor: 'pointer',
-                                            textTransform: 'capitalize',
-                                            borderBottom: statusFilter === status ? '2px solid #166534' : '2px solid transparent',
-                                            paddingBottom: '2px',
-                                            fontSize: '0.9rem'
-                                        }}
-                                    >
-                                        {status}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        {/* UPI & CASH KPIs - Responsive */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.1 }}
+                            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: isSmallDesktop ? '0' : '8px' }}
+                        >
+                            <StatsCard
+                                title="Cash Received"
+                                value={`₹${totalCash.toLocaleString()}`}
+                                subValue={`+ ₹${todayCash.toLocaleString()} Today`}
+                                icon={<Banknote size={18} color={isDark ? '#4ade80' : "#15803d"} />}
+                                bg={isDark ? 'rgba(74, 222, 128, 0.05)' : "rgba(16, 185, 129, 0.05)"}
+                                borderColor={isDark ? 'rgba(74, 222, 128, 0.1)' : "rgba(16, 185, 129, 0.1)"}
+                                textColor={isDark ? '#4ade80' : "#15803d"}
+                                isDark={isDark}
+                                compact
+                            />
+                            <StatsCard
+                                title="UPI Received"
+                                value={`₹${totalUPI.toLocaleString()}`}
+                                subValue={`+ ₹${todayUPI.toLocaleString()} Today`}
+                                icon={<Smartphone size={18} color={isDark ? '#818cf8' : "#4338ca"} />}
+                                bg={isDark ? 'rgba(129, 140, 248, 0.05)' : "rgba(79, 70, 229, 0.05)"}
+                                borderColor={isDark ? 'rgba(129, 140, 248, 0.1)' : "rgba(79, 70, 229, 0.1)"}
+                                textColor={isDark ? '#818cf8' : "#4338ca"}
+                                isDark={isDark}
+                                compact
+                            />
+                        </motion.div>
 
+                        {!isSmallDesktop && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.2rem', color: glassTextStyle }}>Live Orders</h3>
+                                <div style={{ display: 'flex', gap: '16px' }}>
+                                    {['pending', 'ready', 'all'].map(status => (
+                                        <div
+                                            key={status}
+                                            onClick={() => setStatusFilter(status)}
+                                            style={{
+                                                color: statusFilter === status ? '#166534' : (isDark ? '#71717a' : '#a1a1aa'),
+                                                fontWeight: statusFilter === status ? 700 : 500,
+                                                cursor: 'pointer',
+                                                textTransform: 'capitalize',
+                                                borderBottom: statusFilter === status ? '2px solid #166534' : '2px solid transparent',
+                                                paddingBottom: '2px',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        >
+                                            {status}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {!isSmallDesktop && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             {filteredOrders.slice(0, 4).map(order => (
                                 <div
@@ -266,10 +328,10 @@ const DesktopHome = ({ setCurrentView }) => {
                                     style={{
                                         ...glassCardStyle,
                                         padding: '16px', borderRadius: '16px',
-                                        display: 'flex', flexDirection: 'column', justifyContent: 'center', // Center content since description is gone
+                                        display: 'flex', flexDirection: 'column', justifyContent: 'center',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        minHeight: '100px' // Reduced height
+                                        minHeight: '100px'
                                     }}
                                     className="order-card"
                                 >
@@ -277,7 +339,6 @@ const DesktopHome = ({ setCurrentView }) => {
                                         <div style={{ fontWeight: 800, fontSize: '1rem', color: isDark ? 'white' : '#27272a' }}>#{order.id.slice(-6).toUpperCase()}</div>
                                         <div style={{ fontWeight: 800, color: '#b91c1c', fontSize: '1rem' }}>+₹{order.totalValue}</div>
                                     </div>
-                                    {/* [REMOVED] Item Description as requested */}
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                                         <div style={{ fontSize: '0.85rem', color: isDark ? '#e4e4e7' : '#27272a', fontWeight: 600 }}>
@@ -301,23 +362,30 @@ const DesktopHome = ({ setCurrentView }) => {
                                 </div>
                             )}
                         </div>
-                    </div>
+                    )}
+
 
                     {/* B. Low Stock Alerts (Inventory Card Look) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, marginTop: '8px' }}>
                         <h3 style={{ margin: 0, fontSize: '1.2rem', color: glassTextStyle }}>Low Stock Alert</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', flex: 1 }}>
                             {lowStockAlerts.map(item => (
-                                <div key={item.id} style={{
-                                    ...glassCardStyle,
-                                    borderRadius: '16px',
-                                    padding: '8px', // [COMPACT] Reduced padding
-                                    display: 'flex', flexDirection: 'column', gap: '8px',
-                                    height: '100%'
-                                }}>
+                                <div
+                                    key={item.id}
+                                    className="low-stock-card"
+                                    onClick={() => navigate('/inventory', { state: { openBulkEdit: true, highlightLowStock: true } })}
+                                    style={{
+                                        ...glassCardStyle,
+                                        borderRadius: '16px',
+                                        padding: '8px',
+                                        display: 'flex', flexDirection: 'column', gap: '8px',
+                                        height: isLargeDesktop ? '180px' : 'auto', // Reduced height on large screens
+                                        cursor: 'pointer'
+                                    }}
+                                >
                                     {/* Large Image Area */}
                                     <div style={{
-                                        width: '100%', height: '120px', // Fixed height for consistency
+                                        width: '100%', height: isLargeDesktop ? '80px' : '120px', // Reduced height for image
                                         backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : '#f9fafb', borderRadius: '12px',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         overflow: 'hidden'
@@ -393,7 +461,7 @@ const DesktopHome = ({ setCurrentView }) => {
                         ...glassCardStyle,
                         borderRadius: '16px',
                         flex: 1, overflowY: 'auto',
-                        padding: '0 8px' // Internal padding for scroll
+                        padding: '8px' // Internal padding for scroll
                     }} className="hide-scrollbar">
                         {recentActivity.map((t, i) => (
                             <div key={t.id || i} style={{
@@ -587,7 +655,14 @@ const DesktopHome = ({ setCurrentView }) => {
             </Modal>
 
             <style>{`
-                .order-card:hover { transform: translateY(-3px); box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.05); border-color: #d4d4d8; }
+                .order-card:hover, .stats-card:hover, .action-card:hover, .low-stock-card:hover { 
+                    transform: translateY(-4px) scale(1.01); 
+                    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15); 
+                    border-color: #d4d4d8; 
+                }
+                .order-card, .stats-card, .action-card, .low-stock-card {
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+                }
                 .hide-scrollbar::-webkit-scrollbar { display: none; }
                 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
@@ -595,22 +670,23 @@ const DesktopHome = ({ setCurrentView }) => {
     );
 };
 
-const StatsCard = ({ title, value, subValue, icon, bg, borderColor, textColor, isDark }) => (
-    <div style={{
-        padding: '24px', borderRadius: '16px', background: bg,
+const StatsCard = ({ title, value, subValue, icon, bg, borderColor, textColor, isDark, compact = false }) => (
+    <div className="stats-card" style={{
+        padding: compact ? '16px' : '24px', borderRadius: '16px', background: bg,
         border: `1px solid ${borderColor}`,
-        display: 'flex', flexDirection: 'column', gap: '8px',
+        display: 'flex', flexDirection: 'column', gap: compact ? '4px' : '8px',
         backdropFilter: isDark ? 'blur(12px)' : 'none',
-        boxShadow: isDark ? '0 4px 6px -1px rgba(0, 0, 0, 0.2)' : 'none'
+        boxShadow: isDark ? '0 4px 6px -1px rgba(0, 0, 0, 0.2)' : 'none',
+        cursor: 'pointer'
     }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: textColor, opacity: 1 }}>
             {icon}
-            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{title}</span>
+            <span style={{ fontSize: compact ? '0.8rem' : '0.9rem', fontWeight: 600 }}>{title}</span>
         </div>
-        <div style={{ fontSize: '2rem', fontWeight: 800, color: isDark ? 'white' : '#3f3f46' }}>
+        <div style={{ fontSize: compact ? '1.2rem' : '2rem', fontWeight: 800, color: isDark ? 'white' : '#3f3f46' }}>
             {value}
         </div>
-        <div style={{ fontSize: '0.85rem', color: textColor, fontWeight: 500 }}>
+        <div style={{ fontSize: compact ? '0.75rem' : '0.85rem', color: textColor, fontWeight: 500 }}>
             {subValue}
         </div>
     </div>
@@ -619,7 +695,7 @@ const StatsCard = ({ title, value, subValue, icon, bg, borderColor, textColor, i
 const ActionButton = ({ onClick, label, subLabel, icon, bg, accentColor, border = 'none', style = {}, isSmall = false, isCentered = false, isDark }) => (
     <button
         onClick={onClick}
-        className="glass-button"
+        className="glass-button action-card"
         style={{
             ...style,
             width: '100%', padding: '16px', borderRadius: '24px',

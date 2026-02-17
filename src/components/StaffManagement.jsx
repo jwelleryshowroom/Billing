@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/useToast';
+import { useTheme } from '../context/useTheme';
 import { UserPlus, Trash2, Shield, User, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { triggerHaptic } from '../utils/haptics';
 
 const StaffManagement = () => {
-    const { businessId, isSuperAdmin } = useAuth();
+    const { user, businessId, isSuperAdmin } = useAuth();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     const { showToast } = useToast();
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,24 +19,27 @@ const StaffManagement = () => {
     const [newStaff, setNewStaff] = useState({ email: '', name: '', role: 'staff' });
 
     useEffect(() => {
-        if (businessId) {
-            fetchStaff();
-        }
-    }, [businessId]);
+        if (!businessId) return;
 
-    const fetchStaff = async () => {
-        setLoading(true);
-        try {
-            const q = query(collection(db, 'authorized_users'), where('businessId', '==', businessId));
-            const snap = await getDocs(q);
-            setStaff(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        } catch (err) {
-            console.error("Fetch staff error:", err);
-            showToast("Failed to load team members", "error");
-        } finally {
+        console.log("StaffManagement: Syncing staff for businessId:", businessId);
+        const q = query(collection(db, 'authorized_users'), where('businessId', '==', businessId));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log("StaffManagement: Received", docs.length, "team members");
+            setStaff(docs);
             setLoading(false);
-        }
-    };
+        }, (err) => {
+            console.error("StaffManagement Sync error:", err);
+            // Only show toast if it's NOT a permission error (to avoid spamming guests/unauthorized users)
+            if (err.code !== 'permission-denied') {
+                showToast("Failed to load team members", "error");
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [businessId]);
 
     const handleAdd = async (e) => {
         e.preventDefault();
@@ -52,7 +58,7 @@ const StaffManagement = () => {
 
             showToast(`${newStaff.name} added to your team`, "success");
             setNewStaff({ email: '', name: '', role: 'staff' });
-            fetchStaff();
+            // fetchStaff(); is no longer needed with onSnapshot
         } catch (err) {
             console.error("Add staff error:", err);
             showToast("Failed to add member", "error");
@@ -62,13 +68,20 @@ const StaffManagement = () => {
     };
 
     const handleRemove = async (email, name) => {
+        // Prevent self-deletion
+        if (email.toLowerCase() === user?.email?.toLowerCase()) {
+            showToast("You cannot remove yourself!", "error");
+            triggerHaptic('error');
+            return;
+        }
+
         if (!window.confirm(`Are you sure you want to remove ${name}?`)) return;
 
         triggerHaptic('medium');
         try {
             await deleteDoc(doc(db, 'authorized_users', email));
             showToast("Member removed", "success");
-            fetchStaff();
+            // fetchStaff(); not needed
         } catch (err) {
             console.error("Remove staff error:", err);
             showToast("Failed to remove member", "error");
@@ -147,14 +160,23 @@ const StaffManagement = () => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{
                                     width: '36px', height: '36px', borderRadius: '10px',
-                                    background: member.role === 'admin' ? 'rgba(234, 179, 8, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                                    color: member.role === 'admin' ? '#facc15' : '#60a5fa',
+                                    background: member.role === 'admin'
+                                        ? (isDark ? 'rgba(234, 179, 8, 0.15)' : 'rgba(234, 179, 8, 0.25)')
+                                        : (isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.2)'),
+                                    color: member.role === 'admin'
+                                        ? (isDark ? '#facc15' : '#a16207')
+                                        : (isDark ? '#60a5fa' : '#2563eb'),
                                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                                 }}>
                                     {member.role === 'admin' ? <Shield size={18} /> : <User size={18} />}
                                 </div>
                                 <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--color-text-main)', fontSize: '0.95rem' }}>{member.name}</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <div style={{ fontWeight: 600, color: 'var(--color-text-main)', fontSize: '0.95rem' }}>{member.name}</div>
+                                        {member.email.toLowerCase() === user?.email?.toLowerCase() && (
+                                            <span style={{ fontSize: '0.65rem', padding: '1px 5px', background: 'var(--color-bg-secondary)', borderRadius: '4px', color: 'var(--color-text-muted)', fontWeight: 700 }}>YOU</span>
+                                        )}
+                                    </div>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{member.email}</div>
                                 </div>
                             </div>

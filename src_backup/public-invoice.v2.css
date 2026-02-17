@@ -1,0 +1,99 @@
+/* PUBLIC INVOICE Styles */
+.invoice-container {
+    min-height: 100vh;
+    width: 100vw;
+    background-color: #1a202c;
+    /* Tailwind gray-900 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    padding-top: 2rem;
+    padding-bottom: 10rem;
+    /* Give plenty of space to clear the fixed footer */
+    /* Use 100dvh for mobile viewport reliability */
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scroll on iOS */
+    font-family: 'Outfit', sans-serif;
+    color: #fff;
+    scroll-behavior: smooth;
+    scroll-padding-top: 1rem;
+}
+
+.receipt-card {
+    width: 100%;
+    max-width: 420px;
+    background-color: white;
+    color: #1f2937;
+    text-align: center;
+    margin-top: 1rem;
+    position: relative;
+    filter: drop-shadow(0 15px 20px rgba(0, 0, 0, 0.25));
+    padding: 2.5rem 1.5rem 4rem 1.5rem;
+    /* Extra bottom padding for jagged edge visibility */
+
+    /* Jagged Edge using Masking */
+    --mask-size: 20px;
+    --mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 90deg, #0000 91deg) 50% / var(--mask-size) 100% repeat-x;
+    -webkit-mask: var(--mask);
+    mask: var(--mask);
+}
+
+/* MOBILE OPTIMIZATIONS */
+@media screen and (max-width: 480px) {
+    .invoice-container {
+        padding: 0.5rem;
+        padding-top: 1.5rem;
+        padding-bottom: 8rem;
+    }
+
+    .receipt-card {
+        width: 95%;
+        max-width: none;
+        padding: 1.5rem 1rem 3.5rem 1rem;
+        --mask-size: 15px;
+        /* Sharper teeth on mobile */
+    }
+
+    .app-footer {
+        padding: 1rem;
+    }
+
+    .share-btn {
+        padding: 0.8rem !important;
+        font-size: 0.9rem;
+    }
+}
+
+/* Ensure footer button is fixed at the bottom */
+.app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(to top, #1a202c 80%, rgba(26, 32, 44, 0));
+    z-index: 50;
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+    /* Let clicks pass through outside button */
+}
+
+.share-btn {
+    pointer-events: auto;
+    /* Re-enable clicks for button */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: env(safe-area-inset-bottom, 10px);
+}
+
+.share-btn:active {
+    transform: scale(0.96);
+}

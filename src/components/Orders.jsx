@@ -101,7 +101,7 @@ const Orders = () => {
             const timer = setTimeout(() => {
                 window.print();
                 setIsPrinting(false);
-            }, 800);
+            }, 2000); // Increased timeout to 2000ms to ensure content is painted
             return () => clearTimeout(timer);
         }
     }, [showReceipt, selectedOrder]);
@@ -384,10 +384,12 @@ const Orders = () => {
             <Modal isOpen={showReceipt} onClose={() => setShowReceipt(false)} title="Print Document" zIndex={20000}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     {selectedOrder && (
-                        <ReceiptPrinter
-                            transaction={selectedOrder}
-                            type={selectedOrder.status === 'completed' ? 'TAX_INVOICE' : 'ORDER_BOOKING'}
-                        />
+                        <div id="printable-receipt-wrapper">
+                            <ReceiptPrinter
+                                transaction={selectedOrder}
+                                type={selectedOrder.status === 'completed' ? 'TAX_INVOICE' : 'ORDER_BOOKING'}
+                            />
+                        </div>
                     )}
 
                     <button
