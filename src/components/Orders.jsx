@@ -392,15 +392,27 @@ const Orders = () => {
                         </div>
                     )}
 
-                    <button
-                        onClick={() => {
-                            triggerHaptic('light');
-                            setShowReceipt(false);
-                        }}
-                        style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#333', color: 'white', cursor: 'pointer' }}
-                    >
-                        Close
-                    </button>
+                    <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '20px' }}>
+                        <button
+                            onClick={() => {
+                                triggerHaptic('light');
+                                setShowReceipt(false);
+                            }}
+                            style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)', color: 'var(--color-text-main)', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                            Close
+                        </button>
+                        <button
+                            onClick={() => {
+                                triggerHaptic('light');
+                                window.focus();
+                                window.print();
+                            }}
+                            style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--color-primary)', color: 'white', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                        >
+                            <Printer size={18} /> Print Again
+                        </button>
+                    </div>
                 </div>
             </Modal>
 

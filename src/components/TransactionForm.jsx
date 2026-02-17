@@ -533,6 +533,7 @@ const TransactionForm = ({ initialType = 'sale', onSuccess, onInputFocus, onInpu
                         <button
                             onClick={() => {
                                 triggerHaptic('hover');
+                                window.focus();
                                 window.print();
                             }}
                             className="btn-print-now"

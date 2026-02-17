@@ -51,7 +51,7 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                 margin: 0mm; 
             }
             
-            /* Global reset: Allow everything to expand and be visible for printing */
+            /* Global reset: Force everything to be visible and unclipped */
             html, body {
                 height: auto !important;
                 overflow: visible !important;
@@ -62,20 +62,9 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                 print-color-adjust: exact !important;
             }
 
-            /* Hide everything by default except the body and its direct children */
-            #root, .no-print { 
+            /* Hide everything except the body's direct children (portals) */
+            #root, .no-print, .modal-overlay:not(.printing-active) { 
                 display: none !important; 
-            }
-
-            /* Hide ALL modals by default, except the one we are printing */
-            .modal-overlay {
-                display: none !important;
-                background: white !important;
-                backdrop-filter: none !important;
-                position: absolute !important;
-                inset: 0 !important;
-                padding: 0 !important;
-                margin: 0 !important;
             }
 
             /* The SPECIFIC modal we want to print */
@@ -84,11 +73,16 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                 visibility: visible !important;
                 opacity: 1 !important;
                 transform: none !important;
+                position: absolute !important;
+                inset: 0 !important;
+                background: white !important;
                 z-index: 999999 !important;
+                overflow: visible !important;
             }
 
             /* Ensure all parent containers of the receipt are visible and not clipped */
-            .printing-active .modal-content {
+            .printing-active .modal-content,
+            .printing-active .modal-body {
                 display: block !important;
                 visibility: visible !important;
                 position: relative !important;
@@ -106,9 +100,11 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
             }
 
             /* Hide modal chrome: Header, Buttons, Success message, and confirm text */
-            .printing-active .modal-content h2,
-            .printing-active .modal-content button,
-            .printing-active .modal-content .text-success,
+            .printing-active header,
+            .printing-active .modal-content > div:first-child,
+            .printing-active h2,
+            .printing-active button,
+            .printing-active .text-success,
             .btn-print-now,
             #printable-receipt-wrapper > *:not(#printable-receipt) {
                 display: none !important;
@@ -116,11 +112,17 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
 
             /* The actual printable receipt container */
             #printable-receipt-wrapper {
+                display: block !important;
+                visibility: visible !important;
                 border: none !important;
                 box-shadow: none !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 overflow: visible !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
             }
 
             #printable-receipt {
@@ -128,23 +130,22 @@ const ReceiptPrinter = ({ transaction, type = 'TAX_INVOICE' }) => {
                 visibility: visible !important;
                 width: 79mm !important;
                 margin: 0 auto !important;
-                padding: 10mm 5mm !important;
+                padding: 5mm !important;
                 background: white !important;
                 color: black !important;
                 font-family: 'Courier New', monospace !important;
                 position: relative !important;
+                border: none !important;
             }
 
             /* Force all text inside receipt to be visible and black */
             #printable-receipt * {
-                display: inline-block !important; /* Help with legacy rendering */
                 visibility: visible !important;
                 color: black !important;
                 background: transparent !important;
                 overflow: visible !important;
             }
             
-            /* Specific fix for text color inside receipt elements */
             #printable-receipt span, 
             #printable-receipt div, 
             #printable-receipt h1 {

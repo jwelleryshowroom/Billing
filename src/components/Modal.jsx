@@ -120,7 +120,7 @@ const Modal = ({ isOpen, onClose, title, children, zIndex = 20002, containerClas
                         </div>
 
                         {/* Body - SCROLLABLE */}
-                        <div className="no-scrollbar" style={{
+                        <div className="no-scrollbar modal-body" style={{
                             padding: '10px 20px',
                             overflowY: 'auto',
                             overscrollBehavior: 'contain',
